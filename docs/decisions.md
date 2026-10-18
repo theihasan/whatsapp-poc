@@ -8,7 +8,7 @@ The repository already contains the official Laravel React starter kit (Laravel 
 
 ## D-002 — Single workspace, no roles (POC scope)
 
-The owner confirmed this is a proof of concept: one implicit workspace, every authenticated user can do everything, Fortify open registration stays on. There is no `workspaces` / `workspace_user` table. Authorization still runs through policies and channel callbacks (all "authenticated user" today) so roles can be added later without touching controllers.
+The owner confirmed this is a proof of concept: one implicit workspace, every authenticated user can do everything, Fortify open registration stays on. There is no `workspaces` / `workspace_user` table. Authorization is the `auth` + `verified` route middleware plus private broadcast-channel callbacks; there are no policy classes (they would all return true). Adding roles later means adding policies and `authorize()` calls in the controllers.
 **Known limitation:** anyone who can reach the site can register and control linked devices. Do not expose a POC deployment publicly without adding registration gating.
 
 ## D-003 — Campaigns deferred
@@ -74,3 +74,11 @@ An incoming text that is exactly `STOP`, `UNSUBSCRIBE`, `STOP ALL`, `OPT OUT` or
 ## D-018 — Automation safety model
 
 Rules are evaluated only for incoming, non-automated messages (outgoing and automated messages can never trigger rules). Each rule is rate-limited per conversation per hour, and `auto_reply` additionally requires: the workspace toggle `auto_reply_enabled` (default **off**), a provider whose capabilities allow auto-replies, a connected device, and no automated message in the same conversation in the last 60 s. New rules default to dry-run. Notifications contain the rule, contact and conversation id — never message text. Extension point for future AI: add an action type in `AutomationEngine::perform()`.
+
+## D-019 — Agent guidance files
+
+Laravel Boost generates `AGENTS.md` (gitignored) from its framework rules plus `.ai/guidelines/*.md`. Project rules live in `.ai/guidelines/whatsapp-workspace.md`; a committed `CLAUDE.md` repeats them, adds commands, and imports the local `AGENTS.md`. `/CLAUDE.md` was removed from `.gitignore` for this.
+
+## D-020 — Audit findings deferred to the owner
+
+`npm audit` (dev dependencies) reports a critical advisory in `tinypool` via starter-kit `vite-plus@0.3.0` (build tool only; runtime audits are clean). Fixing it means bumping `vite-plus` to 0.3.3, a dependency change that needs owner approval.

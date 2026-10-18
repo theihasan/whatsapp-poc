@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 9 — Hardening and deployment
-> **Next step:** settings + activity pages, security headers, docs, Docker/Nginx/Supervisor, CI.
+> **Current phase:** all planned phases implemented (campaigns deferred).
+> **Next steps (owner):** run the live Baileys checklist (`docs/testing.md`), approve or decline the open dependency items (D-016 phone library, D-020 vite-plus bump, browser/E2E test tooling), decide on registration gating before any public deployment.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -73,6 +73,17 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - `DashboardMetrics`: grouped counts over indexed columns (`messages(direction,created_at)`, `messages(status,created_at)`, `conversations(status,last_message_at)`), 7/14-day windows, 60 s cache; health is a deferred prop cached 30 s. Verified on MySQL and in `tests/Feature/DashboardTest.php` (no message bodies in props).
 - Chart palette validated with the dataviz validator (light + dark, all checks pass); legend, hover tooltip and table view included.
 
-## Phase 9 — Hardening and deployment ⬜
+## Phase 9 — Hardening and deployment ✅ (Docker/VPS cold start ⛔ not executed)
 
 - Activity/audit page, settings page, security headers, rate limits, static analysis, dependency audit, Docker Compose, Nginx/Supervisor configs, GitHub Actions, docs (`security`, `testing`, `deployment`, `operations`, `gateway-api`, `events`, `database`), README, CLAUDE.md.
+- Done: workspace settings (wired notification prefs + auto-reply toggle), activity log, `SecurityHeaders` (nonce CSP outside local), reconciliation + retention commands on the scheduler, audits (runtime clean; dev advisory D-020), Docker Compose (`docker compose config` valid), VPS nginx/Supervisor/cron/logrotate, deploy/rollback/backup/disk-check scripts (`bash -n` clean), CI (PHP 8.4/8.5 matrix, gateway job, audits; `composer ci:check` green locally with CI env).
+- ⛔ Not executed: Docker image build / cold start (Docker daemon not running here), VPS deployment, restore drill, browser CSP check.
+
+## Definition of done — status (2026-10-18)
+
+| Level                    | Status                                                                                                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Development complete  | ✅ for the agreed scope (campaigns and CSV import excluded by owner)                                                                                                                               |
+| 2. Test verified         | ✅ automated: Laravel 191 tests, gateway 48 tests, PHPStan L7, lint/format/types. ⚠️ live: mock end-to-end and gateway-mock cross-process verified; real WhatsApp, browser UI and E2E not verified |
+| 3. Operationally ready   | ⛔ configs and runbooks written but no deployment, restart drill on a server, or backup restore has been performed                                                                                 |
+| 4. Production authorized | ⛔ no — unofficial provider is not authorized for production; official Cloud API untested and requires Meta authorization; POC has no roles and open registration                                  |
