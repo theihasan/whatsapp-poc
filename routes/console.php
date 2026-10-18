@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+Schedule::command('horizon:snapshot')->everyFiveMinutes();
+Schedule::command('app:reconcile-messaging')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('app:prune-records')->dailyAt('03:15')->withoutOverlapping()->onOneServer();
+Schedule::command('queue:prune-failed', ['--hours' => 24 * 14])->daily();

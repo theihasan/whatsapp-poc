@@ -64,4 +64,22 @@ return [
         'mimes' => ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Retention (days)
+    |--------------------------------------------------------------------------
+    |
+    | Applied daily by `app:prune-records`. Messages, contacts and consent
+    | records are never pruned automatically.
+    |
+    */
+
+    'retention' => [
+        'gateway_events_days' => (int) env('RETENTION_GATEWAY_EVENTS_DAYS', 30),
+        'automation_executions_days' => (int) env('RETENTION_AUTOMATION_EXECUTIONS_DAYS', 90),
+        'device_connection_events_days' => (int) env('RETENTION_DEVICE_EVENTS_DAYS', 180),
+        'audit_logs_days' => (int) env('RETENTION_AUDIT_LOGS_DAYS', 365),
+        'read_notifications_days' => (int) env('RETENTION_READ_NOTIFICATIONS_DAYS', 30),
+    ],
+
 ];

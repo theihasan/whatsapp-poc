@@ -7,10 +7,12 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\WhatsAppAccount;
+use App\Notifications\MessageDeliveryFailed;
 use App\Services\Messaging\MessagingProviderRegistry;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -154,4 +156,12 @@ it('stores attachments privately and serves them only to signed-in users', funct
 
     auth()->logout();
     $this->get(route('attachments.show', $attachment))->assertRedirect(route('login'));
+});
+
+it('notifies the sender when a message fails', function () {
+    Notification::fake();
+
+    $this->actingAs($this->user)->post(route('conversations.messages.store', $this->conversation), ['body' => 'boom #fail']);
+
+    Notification::assertSentTo($this->user, MessageDeliveryFailed::class);
 });

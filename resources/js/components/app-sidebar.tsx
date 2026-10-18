@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import {
     FileText,
+    History,
     Inbox,
     LayoutGrid,
     Smartphone,
@@ -23,7 +24,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard, inbox } from '@/routes';
+import { activity, dashboard, inbox } from '@/routes';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -56,6 +57,11 @@ const mainNavItems: NavItem[] = [
         title: 'Devices',
         href: DeviceController.index(),
         icon: Smartphone,
+    },
+    {
+        title: 'Activity',
+        href: activity(),
+        icon: History,
     },
 ];
 

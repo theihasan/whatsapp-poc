@@ -8,7 +8,11 @@ use App\Enums\MessageStatus;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\User;
 use App\Models\WhatsAppAccount;
+use App\Notifications\NewConversationStarted;
+use App\Services\WorkspaceSettings;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 /**
@@ -124,3 +128,14 @@ it('ignores receipts for messages of another device', function () {
 
     expect($message->fresh()->status)->toBe(MessageStatus::GatewayAccepted);
 });
+
+it('notifies the team about a new conversation only when enabled', function (bool $enabled, int $expected) {
+    Notification::fake();
+    app(WorkspaceSettings::class)->update(['notify_on_new_conversation' => $enabled]);
+    User::factory()->count(2)->create();
+
+    receiveEvent($this->account, 'message.received', incomingPayload());
+    receiveEvent($this->account, 'message.received', incomingPayload(['externalId' => 'WA-IN-2']));
+
+    Notification::assertSentTimes(NewConversationStarted::class, $expected);
+})->with(['enabled' => [true, 2], 'disabled' => [false, 0]]);

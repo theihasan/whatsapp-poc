@@ -30,6 +30,7 @@ class AutomationTriggered extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'title' => sprintf('Rule “%s” matched a message from %s', $this->rule->name, $this->conversation->contact->displayName()),
             'rule' => $this->rule->name,
             'conversation_id' => $this->conversation->id,
             'contact' => $this->conversation->contact->displayName(),

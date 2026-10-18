@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Activity\ActivityController;
 use App\Http\Controllers\Automations\AutomationRuleController;
 use App\Http\Controllers\Contacts\ContactConsentController;
 use App\Http\Controllers\Contacts\ContactController;
@@ -46,6 +47,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('automations', AutomationRuleController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::patch('automations/{automation}/toggle', [AutomationRuleController::class, 'toggle'])->name('automations.toggle');
+
+    Route::get('activity', ActivityController::class)->name('activity');
 
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::post('devices/{device}/simulate/incoming-message', [MockDeviceSimulationController::class, 'incomingMessage'])->name('devices.simulate.incoming');

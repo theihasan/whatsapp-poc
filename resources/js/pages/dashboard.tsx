@@ -31,7 +31,7 @@ type HealthCheck = { name: string; healthy: boolean; summary: string };
 
 type NotificationItem = {
     id: string;
-    data: { rule: string; contact: string; conversation_id: string };
+    data: { title: string; conversation_id: string };
     created_at: string | null;
 };
 
@@ -228,11 +228,7 @@ export default function Dashboard({
                                             )}
                                             className="hover:underline"
                                         >
-                                            <span className="font-medium">
-                                                {notification.data.rule}
-                                            </span>{' '}
-                                            matched a message from{' '}
-                                            {notification.data.contact}
+                                            {notification.data.title}
                                         </Link>
                                         <p className="text-xs text-muted-foreground">
                                             {formatListTimestamp(

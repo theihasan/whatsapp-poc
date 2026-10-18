@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,17 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRateLimiting();
+        $this->registerDevCommands();
+    }
+
+    /**
+     * Add the WhatsApp gateway to `composer dev` once it has been configured.
+     */
+    protected function registerDevCommands(): void
+    {
+        if (file_exists(base_path('services/whatsapp-gateway/.env'))) {
+            DevCommands::register('npm --prefix services/whatsapp-gateway run dev', 'gateway');
+        }
     }
 
     /**

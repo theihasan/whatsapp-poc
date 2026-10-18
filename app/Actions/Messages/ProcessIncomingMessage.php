@@ -15,10 +15,14 @@ use App\Jobs\RunAutomations;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\User;
 use App\Models\WhatsAppAccount;
+use App\Notifications\NewConversationStarted;
+use App\Services\WorkspaceSettings;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 /**
@@ -32,7 +36,7 @@ class ProcessIncomingMessage
      */
     public const OPT_OUT_KEYWORDS = ['stop', 'unsubscribe', 'stop all', 'opt out', 'optout'];
 
-    public function __construct(private RevokeConsent $revokeConsent) {}
+    public function __construct(private RevokeConsent $revokeConsent, private WorkspaceSettings $settings) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -101,6 +105,10 @@ class ProcessIncomingMessage
                 MessageCreated::dispatch($message);
                 ConversationUpdated::dispatch($conversation);
                 RunAutomations::dispatch($message)->afterCommit();
+
+                if ($conversation->wasRecentlyCreated && $this->settings->get('notify_on_new_conversation')) {
+                    DB::afterCommit(fn () => Notification::send(User::query()->get(), new NewConversationStarted($conversation)));
+                }
 
                 return $message;
             });

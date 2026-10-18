@@ -12,11 +12,15 @@ use App\Exceptions\ProviderNotEnabledException;
 use App\Exceptions\ProviderUnavailableException;
 use App\Models\Message;
 use App\Models\MessageAttachment;
+use App\Models\User;
+use App\Notifications\MessageDeliveryFailed;
 use App\Services\Messaging\MessagingProviderRegistry;
+use App\Services\WorkspaceSettings;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
@@ -108,7 +112,21 @@ class SendOutgoingMessage implements ShouldBeUnique, ShouldQueue
                 'failure_reason' => Str::limit('Delivery gave up: '.($exception?->getMessage() ?? 'provider unavailable'), 1000),
             ]);
             MessageStatusUpdated::dispatch($message);
+            self::notifyFailure($message);
         }
+    }
+
+    /**
+     * Tell the sender (or everyone, for automated messages) that a message did not go out.
+     */
+    private static function notifyFailure(Message $message): void
+    {
+        if (! app(WorkspaceSettings::class)->get('notify_on_failed_message')) {
+            return;
+        }
+
+        $recipients = $message->user_id === null ? User::query()->get() : User::query()->whereKey($message->user_id)->get();
+        Notification::send($recipients, new MessageDeliveryFailed($message));
     }
 
     /**
@@ -155,6 +173,10 @@ class SendOutgoingMessage implements ShouldBeUnique, ShouldQueue
 
             $locked->save();
             MessageStatusUpdated::dispatch($locked);
+
+            if (in_array($locked->status, [MessageStatus::Failed, MessageStatus::Unknown], true)) {
+                DB::afterCommit(fn () => self::notifyFailure($locked));
+            }
         });
     }
 
