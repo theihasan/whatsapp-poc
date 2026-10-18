@@ -1,5 +1,7 @@
 # Deployment
 
+Tick-box versions of this procedure: `docs/deployment-checklist.md` (pre-deployment, deployment, post-deployment, rollback triggers).
+
 Target: one Ubuntu 24.04 VPS running Nginx, PHP 8.4-FPM, MySQL 8.4, Redis 7, Supervisor (Horizon, Reverb, gateway), cron (scheduler) and Node.js 22+ (24 LTS recommended for production; the gateway is tested on 22.22).
 
 > **Not production-authorized.** A working deployment is not permission to use WhatsApp Web automation commercially. See `docs/security.md` → Compliance. The unofficial provider must stay disabled unless you use consenting test accounts; production messaging requires the official Cloud API with your own Meta authorization.
