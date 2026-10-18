@@ -54,3 +54,11 @@ The QR string is stored in Redis with a 60-second TTL (`device-qr:{accountId}`),
 ## D-013 — Real-time channels without a workspace segment
 
 Because of D-002, channels are `private-devices`, `private-conversations`, `private-conversations.{conversationId}`. Authorization callbacks require an authenticated user and (for the per-conversation channel) an existing conversation.
+
+## D-014 — Broadcast immediately after commit, rescued
+
+Live testing showed ~3 s UI latency: each broadcast was a second queued job and idle workers sleep 3 s between polls. Broadcast events now implement `ShouldBroadcastNow` + `ShouldDispatchAfterCommit` + `ShouldRescue`: they are sent right after the transaction commits, in whichever process made the change (usually a Horizon job), and a Reverb outage is reported instead of failing the request/job. Clients still converge on reload because server props are the source of truth.
+
+## D-015 — Node built-in test runner for the gateway
+
+`npm install vitest` crashes on npm 10.9 (`Cannot read properties of null (reading 'edgesOut')` while resolving optional peers). The gateway uses `node --test` with native TypeScript type stripping instead — no test dependency, same assertions.

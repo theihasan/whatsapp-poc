@@ -209,6 +209,8 @@ return [
             'tries' => 1,
             'timeout' => 60,
             'nice' => 0,
+            // Seconds an idle worker waits before polling again; keeps inbox latency low.
+            'sleep' => 1,
         ],
     ],
 

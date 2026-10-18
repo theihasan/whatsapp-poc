@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 5 — Real-time
-> **Next step:** run Reverb, verify two-browser live updates and channel authorization tests.
+> **Current phase:** 6 — Contacts and inbox improvements
+> **Next step:** Contacts CRUD pages, tags, notes, consent grant/revoke, incoming media download.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -46,9 +46,13 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - Inbox (3-panel), send endpoint, `SendOutgoingMessage` job, `message.received` / `message.status.updated` / `message.failed` processing, dedup, forward-only status, unknown-outcome handling, cursor pagination.
 - Verified by `tests/Feature/Messaging/*`, `tests/Feature/Conversations/InboxTest.php` (118 Laravel tests green). Conversation list is capped at 100 most recent (no list pagination yet).
 
-## Phase 5 — Real-time ⬜
+## Phase 5 — Real-time ✅ (server side verified live; browser rendering ⛔ unverified)
 
 - Broadcast events after commit, channel authorization, `useEcho` subscriptions with cleanup, device status live updates, unread counters.
+- Tests: `tests/Feature/Broadcasting/*` (guest 403 on every private channel, per-conversation channel requires an existing conversation, QR never in device broadcast, no raw gateway fields in message broadcast).
+- Live (Reverb + Horizon + two signed-in WebSocket clients + one guest, scripted with pusher-js): both users received `ConversationUpdated` 0.2–0.9 s after a simulated incoming message; guest subscription rejected with 403.
+- Found & fixed live: ~3 s latency (queued broadcast + 3 s worker sleep) → `ShouldBroadcastNow` + `ShouldRescue` after commit (D-014) and Horizon `sleep => 1`.
+- ⛔ Not verified in a real browser (no browser automation available in this environment): React re-render on events, `useEcho` cleanup, offline banner. See `docs/testing.md` manual checklist.
 
 ## Phase 6 — Contacts and inbox improvements ⬜
 
