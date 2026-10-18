@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 0 — Architecture and setup
-> **Next step:** Phase 1 domain schema.
+> **Current phase:** 4 — Core messaging
+> **Next step:** `QueueOutgoingMessage` + `SendOutgoingMessage` job, inbox UI.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -15,26 +15,30 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - `docs/architecture.md`, `docs/decisions.md`, this plan.
 - **Verify:** `php artisan test --compact` (starter suite green), `php artisan migrate:status`.
 
-## Phase 1 — Laravel foundation ⬜
+## Phase 1 — Laravel foundation 🟡
 
 - Enums, migrations, models, factories, seeders for: whatsapp_accounts, device_connection_events, contacts, tags, contact_tag, contact_consents, conversations, messages, message_attachments, gateway_events, message_templates, automation_rules, automation_executions, audit_logs.
 - `config/messaging.php`, `MessagingProvider` contract, provider resolver, `MockMessagingProvider`.
 - Navigation for all modules; `AuditLogger`.
 - **Accept:** login works; guests redirected from every module route; seed data contains no real phone numbers.
 - **Verify:** `php artisan test --compact`, `vendor/bin/phpstan analyse`, `npm run types:check`.
+- Done: schema, enums, models, factories, provider layer, audit logger, Devices nav. Pending: seeders, nav entries for later modules (added per phase).
 
-## Phase 2 — Gateway foundation ⬜
+## Phase 2 — Gateway foundation ✅
 
 - `services/whatsapp-gateway`: Fastify, Zod env + request validation, Pino (QR/keys redacted), bearer auth, correlation ids, `/health`, `/ready`, session routes.
 - `WhatsAppAdapter` interface with `BaileysAdapter` and `MockAdapter`; `SessionManager` (one socket owner per session, backoff + jitter, bounded attempts); encrypted SQLite auth store; persistent webhook outbox with retries; graceful shutdown.
 - **Accept:** gateway starts alone; unauthenticated/invalid requests rejected; auth-state round-trip and Signal-key persistence tests; webhook signing tests.
-- **Verify:** `cd services/whatsapp-gateway && npm test && npm run typecheck`.
+- **Verify:** `cd services/whatsapp-gateway && npm test && npm run typecheck && npm run build`.
+- Result: 48/48 `node:test` tests pass. Vitest was dropped: npm 10.9 crashes resolving its optional peers (`edgesOut`); Node's built-in runner is allowed by the spec and needs no dependency.
 
-## Phase 3 — QR and device connection ⬜
+## Phase 3 — QR and device connection ✅ (mock + gateway-mock verified; live Baileys ⛔ unverified)
 
 - Devices CRUD, connect / reconnect / disconnect / revoke actions, `ProcessGatewayEvent` for `session.*`, state machine, connection history, duplicate-connection lock, QR modal with expiry.
 - `UnofficialWebProvider` HTTP client.
 - **Accept:** mock device reaches `qr_ready` then `connected` only on event; QR expires; revoke deletes gateway auth state; webhook signature/replay tests.
+- Verified live across processes (Laravel + Horizon + gateway with `GATEWAY_ADAPTER=mock`): connect → `qr_ready` → `connected`; SIGTERM → `disconnected`; restart restores without QR → `connected`; revoke deletes gateway creds/keys. QR string absent from both logs.
+- Found & fixed during the live run: empty-body `DELETE`/`POST` rejected by Fastify (400) — client now always sends `{}`.
 - ⛔ Live Baileys verification is manual (`docs/testing.md` checklist) and stays unverified until run with the owner's test phone.
 
 ## Phase 4 — Core messaging ⬜

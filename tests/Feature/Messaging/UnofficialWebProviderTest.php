@@ -70,3 +70,13 @@ it('throws a retryable exception when the session is not connected', function ()
 
     app(UnofficialWebProvider::class)->sendMessage($device, outgoing());
 })->throws(ProviderUnavailableException::class);
+
+it('sends lifecycle commands with a JSON object body the gateway accepts', function (string $method) {
+    $device = WhatsAppAccount::factory()->unofficial()->create();
+    Http::fake(["http://gateway.test/v1/sessions/{$device->id}*" => Http::response(['revoked' => true], 202)]);
+
+    app(UnofficialWebProvider::class)->{$method}($device);
+
+    Http::assertSent(fn (Request $request) => $request->body() === '{}'
+        && $request->hasHeader('Content-Type', 'application/json'));
+})->with(['disconnect', 'revoke']);

@@ -36,7 +36,7 @@ class GatewayClient
     public function command(string $method, string $path, array $payload = []): Response
     {
         try {
-            $response = $this->request()->send($method, $path, $payload === [] ? [] : ['json' => $payload]);
+            $response = $this->request()->send($method, $path, ['json' => $payload === [] ? new \stdClass : $payload]);
         } catch (ConnectionException $exception) {
             throw new ProviderUnavailableException('The WhatsApp gateway is unreachable.', previous: $exception);
         }

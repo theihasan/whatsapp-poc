@@ -1,0 +1,27 @@
+{
+    "name": "whatsapp-gateway",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Internal WhatsApp Web (Baileys) sidecar for WhatsApp Workspace. Not a public API.",
+    "type": "module",
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning dist/index.js",
+        "dev": "node --env-file-if-exists=.env --watch --disable-warning=ExperimentalWarning src/index.ts",
+        "typecheck": "tsc --noEmit",
+        "test": "node --test --disable-warning=ExperimentalWarning \"tests/**/*.test.ts\""
+    },
+    "dependencies": {
+        "@whiskeysockets/baileys": "7.0.0-rc14",
+        "fastify": "5.12.5",
+        "pino": "9.14.0",
+        "zod": "4.6.5"
+    },
+    "devDependencies": {
+        "@types/node": "22.20.4",
+        "typescript": "5.9.3"
+    },
+    "engines": {
+        "node": ">=22.18.0"
+    }
+}

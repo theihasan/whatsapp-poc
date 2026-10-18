@@ -1,0 +1,161 @@
+import { randomBytes } from 'node:crypto';
+import type { AuthStateHandle } from '../auth/auth-state-repository.ts';
+import type {
+    ConnectionHandlers,
+    OutgoingContent,
+    WhatsAppAdapter,
+    WhatsAppConnection,
+} from './adapter.ts';
+
+/**
+ * Deterministic stand-in for WhatsApp, used for tests and end-to-end demos of the
+ * gateway without a phone. A session without stored credentials shows a QR; after
+ * `autoConnectMs` (or `scan()`) it "pairs", persists fake credentials and opens.
+ * Text containing "#fail" throws on send, "#hang" never resolves.
+ */
+export class MockAdapter implements WhatsAppAdapter {
+    readonly name = 'mock' as const;
+    readonly connections = new Map<
+        string,
+        { handlers: ConnectionHandlers; auth: AuthStateHandle; open: boolean }
+    >();
+    connectCalls = 0;
+    private readonly autoConnectMs: number;
+
+    constructor(autoConnectMs = 0) {
+        this.autoConnectMs = autoConnectMs;
+    }
+
+    async connect(
+        sessionId: string,
+        auth: AuthStateHandle,
+        handlers: ConnectionHandlers,
+    ): Promise<WhatsAppConnection> {
+        this.connectCalls++;
+        const entry = { handlers, auth, open: false };
+        this.connections.set(sessionId, entry);
+
+        queueMicrotask(() => {
+            if (auth.state.creds.registered) {
+                this.#open(sessionId);
+
+                return;
+            }
+
+            handlers.onQr(
+                `MOCK-GW-QR:${sessionId}:${randomBytes(6).toString('hex')}`,
+            );
+
+            if (this.autoConnectMs > 0) {
+                setTimeout(
+                    () => void this.scan(sessionId),
+                    this.autoConnectMs,
+                ).unref();
+            }
+        });
+
+        return {
+            send: async (to: string, content: OutgoingContent) => {
+                if (!entry.open) {
+                    throw new Error('Mock connection is not open.');
+                }
+
+                const text =
+                    content.type === 'text'
+                        ? content.text
+                        : (content.caption ?? '');
+
+                if (text.includes('#fail')) {
+                    throw new Error('Simulated send failure.');
+                }
+
+                if (text.includes('#hang')) {
+                    return new Promise<never>(() => {});
+                }
+
+                const messageId = `MOCKGW${randomBytes(8).toString('hex').toUpperCase()}`;
+                setTimeout(
+                    () => handlers.onStatus(messageId, 'sent'),
+                    10,
+                ).unref();
+                setTimeout(
+                    () => handlers.onStatus(messageId, 'delivered'),
+                    20,
+                ).unref();
+
+                return { messageId };
+            },
+            close: async () => {
+                entry.open = false;
+            },
+            logout: async () => {
+                entry.open = false;
+            },
+        };
+    }
+
+    /** Simulates the phone scanning the QR code. */
+    async scan(sessionId: string): Promise<void> {
+        const entry = this.connections.get(sessionId);
+
+        if (entry === undefined || entry.auth.state.creds.registered) {
+            return;
+        }
+
+        entry.auth.state.creds.registered = true;
+        entry.auth.state.creds.me = {
+            id: '15550100100:1@s.whatsapp.net',
+            name: 'Mock gateway device',
+        };
+        await entry.auth.saveCreds();
+        this.#open(sessionId);
+    }
+
+    /** Simulates a dropped connection with the given close kind. */
+    drop(
+        sessionId: string,
+        kind: 'transient' | 'logged_out' | 'connection_replaced' = 'transient',
+    ): void {
+        const entry = this.connections.get(sessionId);
+
+        if (entry !== undefined) {
+            entry.open = false;
+            entry.handlers.onClose({
+                kind,
+                message: `Simulated ${kind} close`,
+            });
+        }
+    }
+
+    /** Simulates an incoming text message. */
+    receive(sessionId: string, fromPhone: string, text: string): void {
+        this.connections.get(sessionId)?.handlers.onMessage({
+            externalId: `MOCKGWIN${randomBytes(8).toString('hex').toUpperCase()}`,
+            from: {
+                jid: `${fromPhone.replace('+', '')}@s.whatsapp.net`,
+                phoneNumber: fromPhone,
+                pushName: 'Mock contact',
+            },
+            type: 'text',
+            body: text,
+            rawType: 'conversation',
+            timestamp: new Date().toISOString(),
+            media: null,
+        });
+    }
+
+    #open(sessionId: string): void {
+        const entry = this.connections.get(sessionId);
+
+        if (entry === undefined) {
+            return;
+        }
+
+        entry.open = true;
+        entry.handlers.onOpen({
+            jid: '15550100100:1@s.whatsapp.net',
+            phoneNumber: '+15550100100',
+            displayName: 'Mock gateway device',
+        });
+    }
+}
