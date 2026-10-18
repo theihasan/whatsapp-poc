@@ -38,6 +38,7 @@ class MockMessagingProvider implements MessagingProvider
             supportsAutoReply: true,
             supportsBulkMessaging: true,
             isSimulated: true,
+            idempotentSends: true,
         );
     }
 

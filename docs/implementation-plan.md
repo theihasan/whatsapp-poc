@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 4 — Core messaging
-> **Next step:** `QueueOutgoingMessage` + `SendOutgoingMessage` job, inbox UI.
+> **Current phase:** 5 — Real-time
+> **Next step:** run Reverb, verify two-browser live updates and channel authorization tests.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -41,9 +41,10 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - Found & fixed during the live run: empty-body `DELETE`/`POST` rejected by Fastify (400) — client now always sends `{}`.
 - ⛔ Live Baileys verification is manual (`docs/testing.md` checklist) and stays unverified until run with the owner's test phone.
 
-## Phase 4 — Core messaging ⬜
+## Phase 4 — Core messaging ✅
 
 - Inbox (3-panel), send endpoint, `SendOutgoingMessage` job, `message.received` / `message.status.updated` / `message.failed` processing, dedup, forward-only status, unknown-outcome handling, cursor pagination.
+- Verified by `tests/Feature/Messaging/*`, `tests/Feature/Conversations/InboxTest.php` (118 Laravel tests green). Conversation list is capped at 100 most recent (no list pagination yet).
 
 ## Phase 5 — Real-time ⬜
 

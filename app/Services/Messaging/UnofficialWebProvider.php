@@ -33,6 +33,7 @@ class UnofficialWebProvider implements MessagingProvider
             supportsAutoReply: true,
             supportsBulkMessaging: false,
             isSimulated: false,
+            idempotentSends: true,
         );
     }
 

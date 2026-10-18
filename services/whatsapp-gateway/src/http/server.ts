@@ -115,28 +115,24 @@ export function buildServer(deps: ServerDependencies) {
         }
 
         if (!isValidBearer(request.headers.authorization, deps.apiToken)) {
-            await reply
-                .code(401)
-                .send({
-                    error: {
-                        code: 'unauthorized',
-                        message: 'Missing or invalid token.',
-                    },
-                });
+            await reply.code(401).send({
+                error: {
+                    code: 'unauthorized',
+                    message: 'Missing or invalid token.',
+                },
+            });
         }
     });
 
     app.setErrorHandler((error, request, reply) => {
         if (error instanceof ValidationError) {
-            return reply
-                .code(422)
-                .send({
-                    error: {
-                        code: error.code,
-                        message: error.message,
-                        issues: error.issues,
-                    },
-                });
+            return reply.code(422).send({
+                error: {
+                    code: error.code,
+                    message: error.message,
+                    issues: error.issues,
+                },
+            });
         }
 
         if (error instanceof GatewayError) {
@@ -148,26 +144,22 @@ export function buildServer(deps: ServerDependencies) {
         const statusCode = (error as { statusCode?: number }).statusCode;
 
         if (statusCode === 413 || statusCode === 400 || statusCode === 415) {
-            return reply
-                .code(statusCode)
-                .send({
-                    error: {
-                        code: 'bad_request',
-                        message: 'Malformed or oversized request.',
-                    },
-                });
+            return reply.code(statusCode).send({
+                error: {
+                    code: 'bad_request',
+                    message: 'Malformed or oversized request.',
+                },
+            });
         }
 
         request.log.error({ err: error }, 'unhandled error');
 
-        return reply
-            .code(500)
-            .send({
-                error: {
-                    code: 'internal_error',
-                    message: 'Internal gateway error.',
-                },
-            });
+        return reply.code(500).send({
+            error: {
+                code: 'internal_error',
+                message: 'Internal gateway error.',
+            },
+        });
     });
 
     app.get('/health', async () => ({ status: 'ok' }));
@@ -204,14 +196,12 @@ export function buildServer(deps: ServerDependencies) {
         reply.header('Cache-Control', 'no-store');
 
         return qr === null
-            ? reply
-                  .code(404)
-                  .send({
-                      error: {
-                          code: 'no_qr',
-                          message: 'No QR code is pending for this session.',
-                      },
-                  })
+            ? reply.code(404).send({
+                  error: {
+                      code: 'no_qr',
+                      message: 'No QR code is pending for this session.',
+                  },
+              })
             : qr;
     });
 
@@ -263,14 +253,12 @@ export function buildServer(deps: ServerDependencies) {
         const media = deps.media.get(mediaId);
 
         if (media === null) {
-            return reply
-                .code(404)
-                .send({
-                    error: {
-                        code: 'media_not_found',
-                        message: 'Unknown or expired media.',
-                    },
-                });
+            return reply.code(404).send({
+                error: {
+                    code: 'media_not_found',
+                    message: 'Unknown or expired media.',
+                },
+            });
         }
 
         return reply

@@ -14,6 +14,7 @@ export type ProviderCapabilities = {
     supportsAutoReply: boolean;
     supportsBulkMessaging: boolean;
     isSimulated: boolean;
+    idempotentSends: boolean;
 };
 
 export type Device = {

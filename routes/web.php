@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Conversations\ConversationController;
+use App\Http\Controllers\Conversations\ConversationMessageController;
+use App\Http\Controllers\Conversations\InboxController;
+use App\Http\Controllers\Conversations\MarkConversationReadController;
 use App\Http\Controllers\Devices\DeviceController;
 use App\Http\Controllers\Devices\DeviceSessionController;
 use App\Http\Controllers\Devices\MockDeviceSimulationController;
@@ -17,6 +21,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('devices/{device}/revoke', [DeviceSessionController::class, 'revoke'])->name('devices.revoke');
     Route::get('devices/{device}/qr', [DeviceSessionController::class, 'qr'])->name('devices.qr');
     Route::post('devices/{device}/simulate/scan', [MockDeviceSimulationController::class, 'scan'])->name('devices.simulate.scan');
+    Route::get('inbox', InboxController::class)->name('inbox');
+    Route::get('inbox/{conversation}', InboxController::class)->name('inbox.show');
+    Route::post('conversations', [ConversationController::class, 'store'])->name('conversations.store');
+    Route::patch('conversations/{conversation}', [ConversationController::class, 'update'])->name('conversations.update');
+    Route::post('conversations/{conversation}/read', MarkConversationReadController::class)->name('conversations.read');
+    Route::get('conversations/{conversation}/messages', [ConversationMessageController::class, 'index'])->name('conversations.messages.index');
+    Route::post('conversations/{conversation}/messages', [ConversationMessageController::class, 'store'])->middleware('throttle:send-message')->name('conversations.messages.store');
+    Route::post('messages/{message}/retry', [ConversationMessageController::class, 'retry'])->name('messages.retry');
+
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::post('devices/{device}/simulate/incoming-message', [MockDeviceSimulationController::class, 'incomingMessage'])->name('devices.simulate.incoming');
 });

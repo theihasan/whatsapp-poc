@@ -188,7 +188,7 @@ export class BaileysAdapter implements WhatsAppAdapter {
             },
             close: async () => {
                 closed = true;
-                socket.end(undefined);
+                await Promise.resolve(socket.end(undefined));
             },
             logout: async () => {
                 closed = true;

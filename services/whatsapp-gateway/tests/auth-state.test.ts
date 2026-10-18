@@ -86,11 +86,9 @@ test('app state sync keys are revived as protobuf objects', async () => {
 
 test('stores nothing in plaintext', async () => {
     const { database, repository } = open();
-    await repository
-        .handle('session-a')
-        .state.keys.set({
-            session: { peer: Buffer.from('VERY-SECRET-MATERIAL') },
-        });
+    await repository.handle('session-a').state.keys.set({
+        session: { peer: Buffer.from('VERY-SECRET-MATERIAL') },
+    });
     const rows = database.db.prepare('SELECT value FROM auth_keys').all() as {
         value: string;
     }[];

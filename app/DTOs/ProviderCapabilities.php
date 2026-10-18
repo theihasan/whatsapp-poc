@@ -10,6 +10,7 @@ final readonly class ProviderCapabilities
         public bool $supportsAutoReply,
         public bool $supportsBulkMessaging,
         public bool $isSimulated,
+        public bool $idempotentSends,
     ) {}
 
     /**

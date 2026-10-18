@@ -36,6 +36,7 @@ export default defineConfig({
                 '**/.cursor/**',
                 '**/.junie/**',
                 '**/vendor/**',
+                '**/services/**',
             ],
         },
     },
@@ -50,6 +51,8 @@ export default defineConfig({
             'resources/js/components/ui/*',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
+            // Linted by its own strict tsc config (services/whatsapp-gateway).
+            'services/**',
         ],
         options: {
             denyWarnings: true,

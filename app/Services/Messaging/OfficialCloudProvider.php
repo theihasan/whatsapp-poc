@@ -42,6 +42,7 @@ class OfficialCloudProvider implements MessagingProvider
             supportsAutoReply: true,
             supportsBulkMessaging: true,
             isSimulated: false,
+            idempotentSends: false,
         );
     }
 
