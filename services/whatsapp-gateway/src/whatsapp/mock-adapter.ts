@@ -1,7 +1,11 @@
 import { randomBytes } from 'node:crypto';
-import type { AuthStateHandle } from '../auth/auth-state-repository.ts';
+import {
+    isPaired,
+    type AuthStateHandle,
+} from '../auth/auth-state-repository.ts';
 import type {
     ConnectionHandlers,
+    ContactIdentity,
     OutgoingContent,
     WhatsAppAdapter,
     WhatsAppConnection,
@@ -10,7 +14,8 @@ import type {
 /**
  * Deterministic stand-in for WhatsApp, used for tests and end-to-end demos of the
  * gateway without a phone. A session without stored credentials shows a QR; after
- * `autoConnectMs` (or `scan()`) it "pairs", persists fake credentials and opens.
+ * `autoConnectMs` (or `scan()`) it "pairs", persists fake credentials and opens. Like
+ * real Baileys QR pairing, a scan sets `creds.me` but leaves `registered` false.
  * Text containing "#fail" throws on send, "#hang" never resolves.
  */
 export class MockAdapter implements WhatsAppAdapter {
@@ -20,6 +25,7 @@ export class MockAdapter implements WhatsAppAdapter {
         { handlers: ConnectionHandlers; auth: AuthStateHandle; open: boolean }
     >();
     connectCalls = 0;
+    readonly lidMappings = new Map<string, ContactIdentity>();
     private readonly autoConnectMs: number;
 
     constructor(autoConnectMs = 0) {
@@ -36,7 +42,7 @@ export class MockAdapter implements WhatsAppAdapter {
         this.connections.set(sessionId, entry);
 
         queueMicrotask(() => {
-            if (auth.state.creds.registered) {
+            if (isPaired(auth.state.creds)) {
                 this.#open(sessionId);
 
                 return;
@@ -91,6 +97,10 @@ export class MockAdapter implements WhatsAppAdapter {
             logout: async () => {
                 entry.open = false;
             },
+            resolveLids: async (lids: string[]) =>
+                lids
+                    .filter((lid) => this.lidMappings.has(lid))
+                    .map((lid) => this.lidMappings.get(lid)!),
         };
     }
 
@@ -98,11 +108,10 @@ export class MockAdapter implements WhatsAppAdapter {
     async scan(sessionId: string): Promise<void> {
         const entry = this.connections.get(sessionId);
 
-        if (entry === undefined || entry.auth.state.creds.registered) {
+        if (entry === undefined || isPaired(entry.auth.state.creds)) {
             return;
         }
 
-        entry.auth.state.creds.registered = true;
         entry.auth.state.creds.me = {
             id: '15550100100:1@s.whatsapp.net',
             name: 'Mock gateway device',
@@ -127,12 +136,19 @@ export class MockAdapter implements WhatsAppAdapter {
         }
     }
 
+    /** Simulates WhatsApp revealing the phone number behind a LID. */
+    identify(sessionId: string, identity: ContactIdentity): void {
+        this.lidMappings.set(identity.lid, identity);
+        this.connections.get(sessionId)?.handlers.onIdentity(identity);
+    }
+
     /** Simulates an incoming text message. */
     receive(sessionId: string, fromPhone: string, text: string): void {
         this.connections.get(sessionId)?.handlers.onMessage({
             externalId: `MOCKGWIN${randomBytes(8).toString('hex').toUpperCase()}`,
             from: {
                 jid: `${fromPhone.replace('+', '')}@s.whatsapp.net`,
+                lid: null,
                 phoneNumber: fromPhone,
                 pushName: 'Mock contact',
             },

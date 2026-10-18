@@ -2,6 +2,7 @@
 
 namespace App\Actions\Messages;
 
+use App\Actions\Contacts\LinkContactIdentity;
 use App\Actions\Contacts\RevokeConsent;
 use App\Enums\ContactSource;
 use App\Enums\ConversationStatus;
@@ -36,7 +37,11 @@ class ProcessIncomingMessage
      */
     public const OPT_OUT_KEYWORDS = ['stop', 'unsubscribe', 'stop all', 'opt out', 'optout'];
 
-    public function __construct(private RevokeConsent $revokeConsent, private WorkspaceSettings $settings) {}
+    public function __construct(
+        private RevokeConsent $revokeConsent,
+        private WorkspaceSettings $settings,
+        private LinkContactIdentity $linkContactIdentity,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -137,18 +142,33 @@ class ProcessIncomingMessage
      */
     private function resolveContact(string $jid, array $payload): Contact
     {
+        $lid = Arr::get($payload, 'from.lid');
+        $lid = is_string($lid) && $lid !== '' ? $lid : null;
         $phoneNumber = Arr::get($payload, 'from.phoneNumber');
+        $phoneNumber = is_string($phoneNumber) && $phoneNumber !== '' ? $phoneNumber : null;
         $pushName = Arr::get($payload, 'from.pushName');
 
-        $contact = Contact::query()->firstOrCreate(['wa_jid' => $jid], [
-            'name' => is_string($pushName) && $pushName !== '' ? mb_substr($pushName, 0, 255) : null,
-            'phone_number' => is_string($phoneNumber) ? $phoneNumber : null,
-            'source' => ContactSource::IncomingMessage,
-        ]);
+        $contact = Contact::query()
+            ->where('wa_jid', $jid)
+            ->when($lid, fn ($query, string $lid) => $query->orWhere('wa_jid', $lid)->orWhere('wa_lid', $lid))
+            ->first();
 
-        if ($contact->phone_number === null && is_string($phoneNumber)) {
-            $contact->phone_number = $phoneNumber;
-            $contact->save();
+        if ($contact === null) {
+            return Contact::query()->create([
+                'wa_jid' => $jid,
+                'wa_lid' => $lid,
+                'name' => is_string($pushName) && $pushName !== '' ? mb_substr($pushName, 0, 255) : null,
+                'phone_number' => $phoneNumber,
+                'source' => ContactSource::IncomingMessage,
+            ]);
+        }
+
+        if ($lid !== null && $phoneNumber !== null && $jid !== $lid) {
+            return $this->linkContactIdentity->handle($lid, $jid, $phoneNumber) ?? $contact;
+        }
+
+        if ($contact->phone_number === null && $phoneNumber !== null) {
+            $contact->update(['phone_number' => $phoneNumber]);
         }
 
         return $contact;

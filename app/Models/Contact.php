@@ -15,12 +15,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A WhatsApp counterpart. `wa_jid` is the protocol identifier; `phone_number` is only set
- * when it is actually known (a JID is not guaranteed to contain a phone number).
+ * A WhatsApp counterpart. `wa_jid` is the preferred protocol identifier (phone-number JID
+ * when known, otherwise the LID); `wa_lid` keeps the privacy LID so either form matches.
+ * `phone_number` is only set when WhatsApp actually revealed it.
  *
  * @property string $id
  * @property string|null $name
  * @property string|null $wa_jid
+ * @property string|null $wa_lid
  * @property string|null $phone_number
  * @property ContactSource $source
  * @property string|null $notes
@@ -28,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['name', 'wa_jid', 'phone_number', 'source', 'notes', 'last_activity_at'])]
+#[Fillable(['name', 'wa_jid', 'wa_lid', 'phone_number', 'source', 'notes', 'last_activity_at'])]
 class Contact extends Model
 {
     /** @use HasFactory<ContactFactory> */

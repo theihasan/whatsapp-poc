@@ -14,6 +14,7 @@ import {
 import type {
     AccountInfo,
     CloseReason,
+    ContactIdentity,
     IncomingMessage,
     OutgoingContent,
     WhatsAppAdapter,
@@ -273,6 +274,22 @@ export class SessionManager {
         }
     }
 
+    /**
+     * Phone-number identities for LIDs, from the session's local mapping store only.
+     */
+    async resolveLids(
+        sessionId: string,
+        lids: string[],
+    ): Promise<ContactIdentity[]> {
+        const session = this.#require(sessionId);
+
+        if (session.status !== 'connected' || session.connection === null) {
+            throw sessionNotConnected();
+        }
+
+        return session.connection.resolveLids(lids);
+    }
+
     view(sessionId: string): SessionView {
         const session = this.#sessions.get(sessionId);
         const hasCredentials = this.authState.hasCredentials(sessionId);
@@ -441,6 +458,15 @@ export class SessionManager {
                     onMessage: (message) => {
                         if (current()) {
                             void this.#publishIncoming(session.id, message);
+                        }
+                    },
+                    onIdentity: (identity) => {
+                        if (current()) {
+                            this.events.publish(
+                                'contact.identified',
+                                session.id,
+                                { ...identity },
+                            );
                         }
                     },
                     onStatus: (messageId, status) => {

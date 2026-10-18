@@ -2,15 +2,20 @@ import {
     Browsers,
     DisconnectReason,
     downloadMediaMessage,
+    jidNormalizedUser,
     makeCacheableSignalKeyStore,
     makeWASocket,
     type WAMessage,
 } from '@whiskeysockets/baileys';
 import type { Logger } from 'pino';
-import type { AuthStateHandle } from '../auth/auth-state-repository.ts';
+import {
+    isPaired,
+    type AuthStateHandle,
+} from '../auth/auth-state-repository.ts';
 import type {
     CloseReason,
     ConnectionHandlers,
+    ContactIdentity,
     OutgoingContent,
     WhatsAppAdapter,
     WhatsAppConnection,
@@ -19,15 +24,25 @@ import {
     deliveryStatusFromProto,
     normalizeIncoming,
     phoneNumberFromJid,
+    withResolvedPhone,
 } from './normalize.ts';
+
+function toIdentity(lid: string, pn: string): ContactIdentity | null {
+    const phoneNumber = phoneNumberFromJid(pn);
+
+    return phoneNumber === null
+        ? null
+        : {
+              lid: jidNormalizedUser(lid),
+              jid: jidNormalizedUser(pn),
+              phoneNumber,
+          };
+}
 
 /**
  * Maps a Baileys close error to a lifecycle decision for the session manager.
  */
-export function classifyClose(
-    error: unknown,
-    registered: boolean,
-): CloseReason {
+export function classifyClose(error: unknown, paired: boolean): CloseReason {
     const statusCode = (
         error as { output?: { statusCode?: number } } | undefined
     )?.output?.statusCode;
@@ -64,7 +79,7 @@ export function classifyClose(
                     'The stored session is invalid. Revoke and link the device again.',
             };
         case DisconnectReason.timedOut:
-            return registered
+            return paired
                 ? { kind: 'transient', message }
                 : {
                       kind: 'qr_timeout',
@@ -147,7 +162,7 @@ export class BaileysAdapter implements WhatsAppAdapter {
                 handlers.onClose(
                     classifyClose(
                         update.lastDisconnect?.error,
-                        auth.state.creds.registered === true,
+                        isPaired(auth.state.creds),
                     ),
                 );
             }
@@ -158,8 +173,27 @@ export class BaileysAdapter implements WhatsAppAdapter {
                 return;
             }
 
-            for (const message of messages) {
-                this.#dispatchIncoming(socket, message, handlers);
+            void (async () => {
+                for (const message of messages) {
+                    await this.#dispatchIncoming(
+                        socket,
+                        message,
+                        handlers,
+                    ).catch((error: unknown) =>
+                        this.logger.error(
+                            { err: error, sessionId },
+                            'failed to dispatch incoming message',
+                        ),
+                    );
+                }
+            })();
+        });
+
+        socket.ev.on('lid-mapping.update', ({ lid, pn }) => {
+            const identity = toIdentity(lid, pn);
+
+            if (identity !== null) {
+                handlers.onIdentity(identity);
             }
         });
 
@@ -194,18 +228,40 @@ export class BaileysAdapter implements WhatsAppAdapter {
                 closed = true;
                 await socket.logout();
             },
+            resolveLids: async (lids: string[]) => {
+                const pairs =
+                    (await socket.signalRepository.lidMapping.getPNsForLIDs(
+                        lids,
+                    )) ?? [];
+
+                return pairs
+                    .map(({ lid, pn }) => toIdentity(lid, pn))
+                    .filter((identity) => identity !== null);
+            },
         };
     }
 
-    #dispatchIncoming(
+    async #dispatchIncoming(
         socket: ReturnType<typeof makeWASocket>,
         message: WAMessage,
         handlers: ConnectionHandlers,
-    ): void {
-        const normalized = normalizeIncoming(message);
+    ): Promise<void> {
+        let normalized = normalizeIncoming(message);
 
         if (normalized === null) {
             return;
+        }
+
+        if (
+            normalized.from.phoneNumber === null &&
+            normalized.from.lid !== null
+        ) {
+            normalized = withResolvedPhone(
+                normalized,
+                await socket.signalRepository.lidMapping.getPNForLID(
+                    normalized.from.lid,
+                ),
+            );
         }
 
         const { mediaInfo, ...rest } = normalized;

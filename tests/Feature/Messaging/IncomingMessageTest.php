@@ -7,6 +7,7 @@ use App\Enums\ConversationStatus;
 use App\Enums\MessageStatus;
 use App\Models\Contact;
 use App\Models\Conversation;
+use App\Models\GatewayEvent;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\WhatsAppAccount;
@@ -139,3 +140,46 @@ it('notifies the team about a new conversation only when enabled', function (boo
 
     Notification::assertSentTimes(NewConversationStarted::class, $expected);
 })->with(['enabled' => [true, 2], 'disabled' => [false, 0]]);
+
+it('keeps one contact when a sender is first seen by LID and later by phone number', function () {
+    receiveEvent($this->account, 'message.received', incomingPayload([
+        'from' => ['jid' => '123456789012345@lid', 'lid' => '123456789012345@lid', 'phoneNumber' => null],
+    ]));
+    receiveEvent($this->account, 'message.received', incomingPayload([
+        'externalId' => 'WA-IN-2',
+        'from' => ['jid' => '15550100160@s.whatsapp.net', 'lid' => '123456789012345@lid', 'phoneNumber' => '+15550100160'],
+    ]));
+
+    expect(Contact::query()->sole())
+        ->wa_jid->toBe('15550100160@s.whatsapp.net')
+        ->wa_lid->toBe('123456789012345@lid')
+        ->phone_number->toBe('+15550100160');
+    expect(Conversation::query()->count())->toBe(1);
+});
+
+it('fills in the phone number when WhatsApp reveals a LID mapping later', function () {
+    receiveEvent($this->account, 'message.received', incomingPayload([
+        'from' => ['jid' => '123456789012345@lid', 'lid' => '123456789012345@lid', 'phoneNumber' => null],
+    ]));
+
+    receiveEvent($this->account, 'contact.identified', [
+        'lid' => '123456789012345@lid',
+        'jid' => '15550100161@s.whatsapp.net',
+        'phoneNumber' => '+15550100161',
+    ]);
+
+    expect(Contact::query()->sole())
+        ->phone_number->toBe('+15550100161')
+        ->wa_jid->toBe('15550100161@s.whatsapp.net');
+});
+
+it('ignores identities for unknown contacts', function () {
+    receiveEvent($this->account, 'contact.identified', [
+        'lid' => '999999999999999@lid',
+        'jid' => '15550100162@s.whatsapp.net',
+        'phoneNumber' => '+15550100162',
+    ]);
+
+    expect(Contact::query()->count())->toBe(0)
+        ->and(GatewayEvent::query()->sole()->status->value)->toBe('ignored');
+});

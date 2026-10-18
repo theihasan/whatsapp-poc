@@ -6,6 +6,7 @@ import {
     deliveryStatusFromProto,
     normalizeIncoming,
     phoneNumberFromJid,
+    withResolvedPhone,
 } from '../src/whatsapp/normalize.ts';
 
 function message(overrides: Partial<WAMessage>): WAMessage {
@@ -29,6 +30,7 @@ test('normalizes a plain text message from a phone-number JID', () => {
         externalId: 'ABC',
         from: {
             jid: '15550100101@s.whatsapp.net',
+            lid: null,
             phoneNumber: '+15550100101',
             pushName: 'Alex',
         },
@@ -147,4 +149,37 @@ test('classifies disconnect reasons', () => {
         classifyClose(new Error('socket hang up'), true).kind,
         'transient',
     );
+});
+
+test('keeps the LID alongside the phone-number JID when both are known', () => {
+    const normalized = normalizeIncoming(
+        message({
+            key: {
+                id: 'X',
+                remoteJid: '123456789012345@lid',
+                remoteJidAlt: '15550100102@s.whatsapp.net',
+                fromMe: false,
+            },
+        }),
+    );
+
+    assert.equal(normalized?.from.lid, '123456789012345@lid');
+});
+
+test('completes a LID-only sender from the local mapping and switches identity to the phone JID', () => {
+    const lidOnly = normalizeIncoming(
+        message({
+            key: { id: 'X', remoteJid: '123456789012345@lid', fromMe: false },
+        }),
+    )!;
+
+    const resolved = withResolvedPhone(lidOnly, '15550100103:0@s.whatsapp.net');
+
+    assert.deepEqual(resolved.from, {
+        jid: '15550100103@s.whatsapp.net',
+        lid: '123456789012345@lid',
+        phoneNumber: '+15550100103',
+        pushName: 'Alex',
+    });
+    assert.equal(withResolvedPhone(lidOnly, null), lidOnly);
 });

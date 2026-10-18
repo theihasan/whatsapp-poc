@@ -4,6 +4,7 @@ import {
     isJidGroup,
     isJidNewsletter,
     isJidStatusBroadcast,
+    isLidUser,
     isPnUser,
     jidNormalizedUser,
     normalizeMessageContent,
@@ -75,12 +76,18 @@ export function normalizeIncoming(
         : isPnUser(key.remoteJidAlt)
           ? key.remoteJidAlt
           : undefined;
+    const lid = isLidUser(remoteJid)
+        ? remoteJid
+        : isLidUser(key.remoteJidAlt)
+          ? key.remoteJidAlt
+          : undefined;
     const identityJid = jidNormalizedUser(pnJid ?? remoteJid);
 
     const base = {
         externalId: key.id,
         from: {
             jid: identityJid,
+            lid: lid ? jidNormalizedUser(lid) : null,
             phoneNumber: phoneNumberFromJid(pnJid),
             pushName: message.pushName ?? null,
         },
@@ -155,6 +162,30 @@ export function normalizeIncoming(
                 mediaInfo: null,
             };
     }
+}
+
+/**
+ * Completes a LID-only sender with a phone-number JID when one is known.
+ */
+export function withResolvedPhone<
+    T extends {
+        from: { jid: string; lid: string | null; phoneNumber: string | null };
+    },
+>(message: T, pnJid: string | null): T {
+    const phoneNumber = phoneNumberFromJid(pnJid);
+
+    if (
+        message.from.phoneNumber !== null ||
+        pnJid === null ||
+        phoneNumber === null
+    ) {
+        return message;
+    }
+
+    return {
+        ...message,
+        from: { ...message.from, jid: jidNormalizedUser(pnJid), phoneNumber },
+    };
 }
 
 /**

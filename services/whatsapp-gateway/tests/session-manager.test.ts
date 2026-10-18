@@ -241,6 +241,7 @@ test('publishes normalized incoming messages', async () => {
     assert.equal(received?.payload.body, 'Hello there');
     assert.deepEqual(received?.payload.from, {
         jid: '15550100102@s.whatsapp.net',
+        lid: null,
         phoneNumber: '+15550100102',
         pushName: 'Mock contact',
     });
@@ -259,5 +260,32 @@ test('graceful shutdown closes sockets but keeps sessions restorable', async () 
     assert.equal(
         eventsOf(recorder.requests).at(-1)?.type,
         'session.disconnected',
+    );
+});
+
+test('publishes contact identities learned from WhatsApp and resolves known LIDs', async () => {
+    await gateway.sessions.start('session-a');
+    await waitFor(
+        () => gateway.sessions.view('session-a').status === 'qr_ready',
+    );
+    await adapter.scan('session-a');
+    const identity = {
+        lid: '123456789012345@lid',
+        jid: '15550100104@s.whatsapp.net',
+        phoneNumber: '+15550100104',
+    };
+
+    adapter.identify('session-a', identity);
+
+    const identified = (await flush()).find(
+        (event) => event.type === 'contact.identified',
+    );
+    assert.deepEqual(identified?.payload, identity);
+    assert.deepEqual(
+        await gateway.sessions.resolveLids('session-a', [
+            '123456789012345@lid',
+            '999999999999999@lid',
+        ]),
+        [identity],
     );
 });

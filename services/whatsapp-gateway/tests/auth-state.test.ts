@@ -137,3 +137,17 @@ test('deleting a session removes credentials and keys only for that session', as
     assert.equal(repository.hasCredentials('session-b'), true);
     database.close();
 });
+
+test('treats QR-paired credentials (me set, registered false) as paired', async () => {
+    const { isPaired } = await import('../src/auth/auth-state-repository.ts');
+
+    assert.equal(
+        isPaired({
+            registered: false,
+            me: { id: '15550100100:1@s.whatsapp.net' },
+        } as never),
+        true,
+    );
+    assert.equal(isPaired({ registered: false } as never), false);
+    assert.equal(isPaired(null), false);
+});

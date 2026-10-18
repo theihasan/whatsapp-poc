@@ -82,3 +82,11 @@ Laravel Boost generates `AGENTS.md` (gitignored) from its framework rules plus `
 ## D-020 — Audit findings deferred to the owner
 
 `npm audit` (dev dependencies) reports a critical advisory in `tinypool` via starter-kit `vite-plus@0.3.0` (build tool only; runtime audits are clean). Fixing it means bumping `vite-plus` to 0.3.3, a dependency change that needs owner approval.
+
+## D-021 — WhatsApp LIDs and contact identity
+
+WhatsApp increasingly addresses users by LID (`…@lid`), a privacy identifier without a phone number. Baileys keeps a LID→phone mapping store (synced from WhatsApp, stored in our encrypted key store as `lid-mapping`). The gateway resolves LID-only senders from that store before publishing, emits `contact.identified` when Baileys learns a new mapping, and offers `POST /v1/sessions/:id/contacts/resolve` for backfills. Laravel stores `contacts.wa_lid` (unique) next to `wa_jid`, matches incoming messages on either, and upgrades `wa_jid` to the phone-number JID once known, so one person never becomes two contacts. Numbers are never guessed: without a mapping the contact stays LID-only.
+
+## D-022 — "Paired" means `creds.me`, not `creds.registered`
+
+Live testing showed Baileys QR pairing leaves `creds.registered = false` (that flag belongs to the pairing-code flow) and sets `creds.me`. Session restore and close classification now use `isPaired()` (`me.id` present or `registered`). The mock adapter mirrors this so tests would catch a regression.

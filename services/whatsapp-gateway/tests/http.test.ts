@@ -214,3 +214,14 @@ test('does not leak internal error details', async () => {
         error: { code: 'internal_error', message: 'Internal gateway error.' },
     });
 });
+
+test('validates LID resolution requests', async () => {
+    const response = await gateway.server.inject({
+        method: 'POST',
+        url: '/v1/sessions/01JSESSIONAAAA/contacts/resolve',
+        headers: auth,
+        payload: { lids: ['15550100101@s.whatsapp.net'] },
+    });
+
+    assert.equal(response.statusCode, 422);
+});

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Gateway;
 
+use App\Actions\Contacts\LinkContactIdentity;
 use App\Actions\Devices\ApplyDeviceStatus;
 use App\Actions\Messages\MarkOutgoingMessageFailed;
 use App\Actions\Messages\ProcessIncomingMessage;
@@ -24,6 +25,7 @@ class HandleGatewayEvent
         private ProcessIncomingMessage $processIncomingMessage,
         private UpdateMessageDeliveryStatus $updateMessageDeliveryStatus,
         private MarkOutgoingMessageFailed $markOutgoingMessageFailed,
+        private LinkContactIdentity $linkContactIdentity,
     ) {}
 
     public function handle(GatewayEvent $event): bool
@@ -52,6 +54,7 @@ class HandleGatewayEvent
             'message.received' => $this->processIncomingMessage->handle($account, $payload) !== null,
             'message.status.updated' => $this->updateMessageDeliveryStatus->handle($account, $payload),
             'message.failed' => $this->markOutgoingMessageFailed->handle($account, $payload),
+            'contact.identified' => $this->identify($payload),
             default => false,
         };
     }
@@ -70,6 +73,22 @@ class HandleGatewayEvent
         $this->qrStore->put($account, $qr, (int) Arr::get($payload, 'expiresInSeconds', config('messaging.qr_ttl')));
 
         return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function identify(array $payload): bool
+    {
+        $lid = $this->string($payload, 'lid');
+        $jid = $this->string($payload, 'jid');
+        $phoneNumber = $this->string($payload, 'phoneNumber');
+
+        if ($lid === null || $jid === null || $phoneNumber === null) {
+            return false;
+        }
+
+        return $this->linkContactIdentity->handle($lid, $jid, $phoneNumber) !== null;
     }
 
     /**

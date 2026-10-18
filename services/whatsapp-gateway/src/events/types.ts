@@ -10,7 +10,8 @@ export type GatewayEventType =
     | 'session.failed'
     | 'message.received'
     | 'message.status.updated'
-    | 'message.failed';
+    | 'message.failed'
+    | 'contact.identified';
 
 /**
  * Normalized event envelope delivered to Laravel (docs/events.md). These names are

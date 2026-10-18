@@ -89,6 +89,30 @@ class UnofficialWebProvider implements MessagingProvider
         };
     }
 
+    /**
+     * Phone-number identities for LIDs the linked device already knows (gateway-local
+     * mapping store; no lookup on WhatsApp).
+     *
+     * @param  list<string>  $lids
+     * @return list<array{lid: string, jid: string, phoneNumber: string}>
+     *
+     * @throws ProviderUnavailableException
+     */
+    public function resolveContactIdentities(WhatsAppAccount $account, array $lids): array
+    {
+        $identities = $this->gateway
+            ->command('POST', "/v1/sessions/{$account->sessionId()}/contacts/resolve", ['lids' => $lids])
+            ->json('identities', []);
+
+        return array_values(array_filter(
+            is_array($identities) ? $identities : [],
+            fn (mixed $identity): bool => is_array($identity)
+                && is_string($identity['lid'] ?? null)
+                && is_string($identity['jid'] ?? null)
+                && is_string($identity['phoneNumber'] ?? null),
+        ));
+    }
+
     public function health(): ProviderHealth
     {
         try {

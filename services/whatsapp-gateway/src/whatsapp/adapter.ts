@@ -13,7 +13,12 @@ export type IncomingMedia = {
  */
 export type IncomingMessage = {
     externalId: string;
-    from: { jid: string; phoneNumber: string | null; pushName: string | null };
+    from: {
+        jid: string;
+        lid: string | null;
+        phoneNumber: string | null;
+        pushName: string | null;
+    };
     type: 'text' | 'image' | 'document' | 'audio' | 'unsupported';
     body: string | null;
     rawType: string | null;
@@ -37,12 +42,16 @@ export type AccountInfo = {
     displayName: string | null;
 };
 
+/** A LID ↔ phone-number pairing learned from WhatsApp. */
+export type ContactIdentity = { lid: string; jid: string; phoneNumber: string };
+
 export type ConnectionHandlers = {
     onQr: (qr: string) => void;
     onOpen: (account: AccountInfo) => void;
     onClose: (reason: CloseReason) => void;
     onMessage: (message: IncomingMessage) => void;
     onStatus: (messageId: string, status: DeliveryStatus) => void;
+    onIdentity: (identity: ContactIdentity) => void;
 };
 
 export type OutgoingContent =
@@ -64,6 +73,8 @@ export type WhatsAppConnection = {
     close: () => Promise<void>;
     /** Unlink the device on WhatsApp's side. */
     logout: () => Promise<void>;
+    /** Phone-number identities for LIDs already known locally (no network lookup). */
+    resolveLids: (lids: string[]) => Promise<ContactIdentity[]>;
 };
 
 export type WhatsAppAdapter = {

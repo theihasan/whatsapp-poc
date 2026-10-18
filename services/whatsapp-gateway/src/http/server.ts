@@ -245,6 +245,21 @@ export function buildServer(deps: ServerDependencies) {
         };
     });
 
+    app.post('/v1/sessions/:id/contacts/resolve', async (request) => {
+        const { id } = parse(z.object({ id: sessionId }), request.params);
+        const body = parse(
+            z.object({
+                lids: z
+                    .array(z.string().regex(/^\d{6,20}@lid$/))
+                    .min(1)
+                    .max(500),
+            }),
+            request.body,
+        );
+
+        return { identities: await deps.sessions.resolveLids(id, body.lids) };
+    });
+
     app.get('/v1/media/:mediaId', async (request, reply) => {
         const { mediaId } = parse(
             z.object({ mediaId: z.uuid() }),

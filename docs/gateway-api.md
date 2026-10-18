@@ -87,6 +87,10 @@ Logs the device out on WhatsApp when connected, then deletes credentials, Signal
 
 `to` must be a user JID (`…@s.whatsapp.net` or `…@lid`). Groups/broadcasts are rejected.
 
+### `POST /v1/sessions/:id/contacts/resolve` `{"lids":["…@lid", …]}` (1–500) → `200 {"identities":[{lid, jid, phoneNumber}]}`
+
+Phone-number identities for LIDs from the connected session's **local** mapping store (no lookup on WhatsApp). Unknown LIDs are omitted. `409 session_not_connected` when the session is not connected. Used by `php artisan app:resolve-contact-numbers`.
+
 ### `GET /v1/media/:mediaId` → binary (`Content-Type` = media type, `X-Media-File-Name` URL-encoded)
 
 ### `DELETE /v1/media/:mediaId` → `204`

@@ -10,6 +10,16 @@ import {
 import type { StateCipher } from '../security/crypto.ts';
 import type { GatewayDatabase } from '../store/database.ts';
 
+/**
+ * Whether the credentials belong to a linked device. QR pairing sets `me` and leaves
+ * `registered` false (that flag is only used by the pairing-code flow).
+ */
+export function isPaired(
+    creds: AuthenticationCreds | null | undefined,
+): boolean {
+    return Boolean(creds?.me?.id) || creds?.registered === true;
+}
+
 export type AuthStateHandle = {
     state: AuthenticationState;
     saveCreds: () => Promise<void>;
@@ -42,7 +52,7 @@ export class AuthStateRepository {
     }
 
     isRegistered(sessionId: string): boolean {
-        return this.loadCreds(sessionId)?.registered === true;
+        return isPaired(this.loadCreds(sessionId));
     }
 
     loadCreds(sessionId: string): AuthenticationCreds | null {
