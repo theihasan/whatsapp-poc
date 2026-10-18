@@ -1,0 +1,23 @@
+# Never bake secrets, local state or build caches into images.
+.env
+.env.*
+!.env.example
+**/.env
+services/whatsapp-gateway/data
+services/whatsapp-gateway/node_modules
+services/whatsapp-gateway/dist
+node_modules
+vendor
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+deployment/*.env
+.git
+.claude
+.agents
+.idea
+.vscode

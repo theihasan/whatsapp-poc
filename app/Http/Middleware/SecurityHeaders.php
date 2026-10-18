@@ -38,9 +38,12 @@ class SecurityHeaders
 
     private function policy(string $nonce): string
     {
-        $scheme = config('reverb.apps.apps.0.options.scheme', 'https') === 'https' ? 'wss' : 'ws';
-        $host = (string) config('reverb.apps.apps.0.options.host', 'localhost');
-        $port = (string) config('reverb.apps.apps.0.options.port', 443);
+        $websocket = config('security.websocket_origin');
+
+        if (! is_string($websocket) || $websocket === '') {
+            $scheme = config('reverb.apps.apps.0.options.scheme', 'https') === 'https' ? 'wss' : 'ws';
+            $websocket = sprintf('%s://%s:%s', $scheme, config('reverb.apps.apps.0.options.host', 'localhost'), config('reverb.apps.apps.0.options.port', 443));
+        }
 
         return implode('; ', [
             "default-src 'self'",
@@ -48,7 +51,7 @@ class SecurityHeaders
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self'",
-            "connect-src 'self' {$scheme}://{$host}:{$port}",
+            "connect-src 'self' {$websocket}",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",

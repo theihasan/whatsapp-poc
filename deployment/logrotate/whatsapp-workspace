@@ -1,0 +1,10 @@
+/var/log/whatsapp-workspace/*.log /var/www/whatsapp-workspace/shared/storage/logs/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    su deploy deploy
+}

@@ -1,0 +1,4 @@
+# crontab -u deploy -e
+* * * * * cd /var/www/whatsapp-workspace/current && php artisan schedule:run >> /dev/null 2>&1
+15 2 * * * /var/www/whatsapp-workspace/current/deployment/scripts/backup.sh >> /var/log/whatsapp-workspace/backup.log 2>&1
+*/10 * * * * /var/www/whatsapp-workspace/current/deployment/scripts/disk-check.sh

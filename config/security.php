@@ -15,6 +15,13 @@ return [
 
     'csp_enabled' => (bool) env('SECURITY_CSP_ENABLED', env('APP_ENV') !== 'local'),
 
+    /*
+    | Origin browsers use for Reverb WebSockets (CSP connect-src). Defaults to the
+    | public Reverb host; set it when the app publishes to an internal Reverb host.
+    */
+
+    'websocket_origin' => env('SECURITY_WS_ORIGIN'),
+
     'hsts' => (bool) env('SECURITY_HSTS', env('APP_ENV') === 'production'),
 
 ];
