@@ -7,6 +7,7 @@ use App\Http\Controllers\Conversations\ConversationController;
 use App\Http\Controllers\Conversations\ConversationMessageController;
 use App\Http\Controllers\Conversations\InboxController;
 use App\Http\Controllers\Conversations\MarkConversationReadController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Devices\DeviceController;
 use App\Http\Controllers\Devices\DeviceSessionController;
 use App\Http\Controllers\Devices\MockDeviceSimulationController;
@@ -17,7 +18,8 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::post('notifications/read', [DashboardController::class, 'readNotifications'])->name('notifications.read');
 
     Route::resource('devices', DeviceController::class)->except(['create', 'edit']);
     Route::post('devices/{device}/connect', [DeviceSessionController::class, 'connect'])->middleware('throttle:10,1')->name('devices.connect');

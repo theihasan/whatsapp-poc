@@ -141,3 +141,14 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Chart tokens (validated palette slots 1–2; see dataviz reference palette). */
+.viz-root {
+    --series-incoming: #2a78d6;
+    --series-outgoing: #eb6834;
+}
+
+.dark .viz-root {
+    --series-incoming: #3987e5;
+    --series-outgoing: #d95926;
+}

@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 8 — Dashboard and reporting
-> **Next step:** cached aggregates, activity chart, workload, health, notifications list.
+> **Current phase:** 9 — Hardening and deployment
+> **Next step:** settings + activity pages, security headers, docs, Docker/Nginx/Supervisor, CI.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -67,9 +67,11 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - Verified: 26 template/automation tests; live run through Horizon (`RunAutomations` on the `automations` queue) produced the seeded rule's suggestion.
 - Known test-environment artefact: with the `sync` queue, delivery receipts for an auto-reply are released by the per-session `WithoutOverlapping` lock of the outer job; with Redis they process right after.
 
-## Phase 8 — Dashboard and reporting ⬜
+## Phase 8 — Dashboard and reporting ✅
 
 - Cached aggregates, activity chart, workload, provider/gateway health, mock-data label.
+- `DashboardMetrics`: grouped counts over indexed columns (`messages(direction,created_at)`, `messages(status,created_at)`, `conversations(status,last_message_at)`), 7/14-day windows, 60 s cache; health is a deferred prop cached 30 s. Verified on MySQL and in `tests/Feature/DashboardTest.php` (no message bodies in props).
+- Chart palette validated with the dataviz validator (light + dark, all checks pass); legend, hover tooltip and table view included.
 
 ## Phase 9 — Hardening and deployment ⬜
 
