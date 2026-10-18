@@ -39,6 +39,7 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - **Accept:** mock device reaches `qr_ready` then `connected` only on event; QR expires; revoke deletes gateway auth state; webhook signature/replay tests.
 - Verified live across processes (Laravel + Horizon + gateway with `GATEWAY_ADAPTER=mock`): connect → `qr_ready` → `connected`; SIGTERM → `disconnected`; restart restores without QR → `connected`; revoke deletes gateway creds/keys. QR string absent from both logs.
 - Found & fixed during the live run: empty-body `DELETE`/`POST` rejected by Fastify (400) — client now always sends `{}`.
+- 🟡 Live Baileys (2026-10-18, Baileys 7.0.0-rc14, owner's test number): QR pairing ✅ (connected only after the post-pairing 515 restart), outbound text ✅ delivered in < 3 s with a WhatsApp message id. Remaining checklist items (inbound, media, read receipts, restart/restore, unlink/revoke) not yet run.
 - ⛔ Live Baileys verification is manual (`docs/testing.md` checklist) and stays unverified until run with the owner's test phone.
 
 ## Phase 4 — Core messaging ✅
