@@ -96,6 +96,8 @@ class Conversation extends Model
             'open' => $query->where('status', ConversationStatus::Open),
             'closed' => $query->where('status', ConversationStatus::Closed),
             'mine' => $query->where('assigned_user_id', $user->id),
+            'direct' => $query->whereHas('contact', fn (Builder $contact) => $contact->where('is_group', false)),
+            'groups' => $query->whereHas('contact', fn (Builder $contact) => $contact->where('is_group', true)),
             default => null,
         };
     }

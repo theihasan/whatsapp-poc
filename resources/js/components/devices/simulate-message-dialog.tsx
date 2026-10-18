@@ -69,6 +69,18 @@ export default function SimulateMessageDialog({ device }: { device: Device }) {
                                 </div>
                             </div>
                             <div className="grid gap-2">
+                                <Label htmlFor="sim-group">
+                                    Group name (optional)
+                                </Label>
+                                <Input
+                                    id="sim-group"
+                                    name="group_name"
+                                    placeholder="Leave empty for a direct chat"
+                                    maxLength={100}
+                                />
+                                <InputError message={errors.group_name} />
+                            </div>
+                            <div className="grid gap-2">
                                 <Label htmlFor="sim-body">Message</Label>
                                 <Textarea
                                     id="sim-body"

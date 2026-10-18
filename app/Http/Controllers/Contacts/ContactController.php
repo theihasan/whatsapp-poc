@@ -35,6 +35,7 @@ class ContactController extends Controller
         ]);
 
         $contacts = Contact::query()
+            ->people()
             ->with('tags')
             ->withExists(['consents as has_consent' => fn (Builder $query) => $query->whereNull('revoked_at')])
             ->search($filters['search'] ?? null)

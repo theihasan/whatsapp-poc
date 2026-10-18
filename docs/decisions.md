@@ -94,3 +94,7 @@ Live testing showed Baileys QR pairing leaves `creds.registered = false` (that f
 ## D-023 — Contact profile pictures
 
 WhatsApp Web clients can request a contact's profile picture; the gateway exposes this (preview size, JPEG/PNG ≤ 1 MB, WhatsApp CDN only). CDN URLs expire and the CSP only allows same-origin images, so Laravel's `FetchContactAvatar` copies the picture to the private disk (`avatars/{contact}.jpg`) and serves it through the authenticated `contacts.avatar` route. Checked at most once per 7 days per contact (also when the picture is hidden), triggered by incoming WhatsApp Web messages, and `app:refresh-contact-avatars --limit=50` backfills only contacts you already have a conversation with — no lookups of arbitrary numbers. Pictures hidden by privacy settings are not available and show initials.
+
+## D-024 — Group chats
+
+Groups are supported for reading and replying. A group is stored as a contact with `is_group = true` (`wa_jid` = `…@g.us`, name = subject), so conversations, the inbox, assignment, avatars and sending reuse the 1:1 model. Each incoming group message records its sender (`messages.sender_jid`, `sender_name`, `metadata.sender_phone`). Safety defaults: group members are **not** turned into contacts, groups never get consent records or STOP handling, automations (including auto-replies) never run in groups, and groups are excluded from the Contacts page. Inbox filters: Direct / Groups. Not supported: member lists, admin actions, mentions, group creation, messages you send from the phone itself.

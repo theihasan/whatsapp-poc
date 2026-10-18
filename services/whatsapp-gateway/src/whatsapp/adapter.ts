@@ -7,18 +7,24 @@ export type IncomingMedia = {
     download: () => Promise<Buffer>;
 };
 
+export type Person = {
+    jid: string;
+    lid: string | null;
+    phoneNumber: string | null;
+    pushName: string | null;
+};
+
 /**
  * Protocol-independent incoming message. `phoneNumber` is null when only a LID / opaque
  * identifier is known — callers must not derive phone numbers from `jid` themselves.
  */
 export type IncomingMessage = {
     externalId: string;
-    from: {
-        jid: string;
-        lid: string | null;
-        phoneNumber: string | null;
-        pushName: string | null;
-    };
+    /** The chat: the person for direct chats, the group for group chats (pushName = subject). */
+    from: Person;
+    chatType: 'direct' | 'group';
+    /** Who wrote the message inside a group; null for direct chats. */
+    participant: Person | null;
     type: 'text' | 'image' | 'document' | 'audio' | 'unsupported';
     body: string | null;
     rawType: string | null;

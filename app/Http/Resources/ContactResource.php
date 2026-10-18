@@ -29,6 +29,7 @@ class ContactResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'display_name' => $this->displayName(),
+            'is_group' => $this->is_group,
             'phone_number' => $this->phone_number,
             'wa_jid' => $this->wa_jid,
             'source' => $this->source->value,

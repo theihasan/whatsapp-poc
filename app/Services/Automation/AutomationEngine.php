@@ -23,7 +23,8 @@ use Throwable;
 /**
  * Deterministic rules engine for incoming messages.
  *
- * Loop prevention: rules only ever see incoming, non-automated messages; auto-replies
+ * Group chats never trigger rules. Loop prevention: rules only ever see incoming,
+ * non-automated messages; auto-replies
  * are marked automated, rate-limited per rule and conversation, and suppressed while a
  * recent automated reply exists. New action types are added in `perform()` — e.g. an
  * AI-backed `suggest_reply` would be one more case there.
@@ -47,6 +48,10 @@ class AutomationEngine
         }
 
         $message->loadMissing(['conversation.whatsappAccount', 'contact.tags']);
+
+        if ($message->contact->is_group) {
+            return;
+        }
 
         $rules = AutomationRule::query()
             ->where('is_enabled', true)

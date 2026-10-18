@@ -1,3 +1,4 @@
+import { Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
@@ -9,10 +10,12 @@ import { cn } from '@/lib/utils';
 export default function ContactAvatar({
     name,
     avatarUrl,
+    isGroup = false,
     className,
 }: {
     name: string;
     avatarUrl: string | null | undefined;
+    isGroup?: boolean;
     className?: string;
 }) {
     const getInitials = useInitials();
@@ -22,7 +25,11 @@ export default function ContactAvatar({
         <Avatar className={cn('size-9 shrink-0', className)}>
             {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
             <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-                {initials}
+                {isGroup ? (
+                    <Users className="size-4" aria-label="Group" />
+                ) : (
+                    initials
+                )}
             </AvatarFallback>
         </Avatar>
     );

@@ -64,15 +64,25 @@ class MockMessagingProvider implements MessagingProvider
         ]);
     }
 
-    public function simulateIncomingMessage(WhatsAppAccount $account, string $fromPhoneNumber, ?string $name, string $body): void
+    public function simulateIncomingMessage(WhatsAppAccount $account, string $fromPhoneNumber, ?string $name, string $body, ?string $groupName = null): void
     {
+        $sender = [
+            'jid' => FakePhone::jid($fromPhoneNumber),
+            'lid' => null,
+            'phoneNumber' => $fromPhoneNumber,
+            'pushName' => $name,
+        ];
+
         $this->emit($account, 'message.received', [
             'externalId' => 'MOCK-IN-'.Str::ulid(),
-            'from' => [
-                'jid' => FakePhone::jid($fromPhoneNumber),
-                'phoneNumber' => $fromPhoneNumber,
-                'pushName' => $name,
+            'chatType' => $groupName === null ? 'direct' : 'group',
+            'from' => $groupName === null ? $sender : [
+                'jid' => '120363'.substr(sprintf('%u', crc32(mb_strtolower($groupName))).'000000000000', 0, 12).'@g.us',
+                'lid' => null,
+                'phoneNumber' => null,
+                'pushName' => $groupName,
             ],
+            'participant' => $groupName === null ? null : $sender,
             'type' => 'text',
             'body' => $body,
             'timestamp' => now()->toIso8601String(),

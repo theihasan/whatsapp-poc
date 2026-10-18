@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $whatsapp_account_id
  * @property string $contact_id
  * @property int|null $user_id
+ * @property string|null $sender_jid
+ * @property string|null $sender_name
  * @property MessageDirection $direction
  * @property MessageType $type
  * @property string|null $body
@@ -36,7 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
-    'conversation_id', 'whatsapp_account_id', 'contact_id', 'user_id', 'direction', 'type', 'body',
+    'conversation_id', 'whatsapp_account_id', 'contact_id', 'user_id', 'sender_jid', 'sender_name', 'direction', 'type', 'body',
     'external_id', 'idempotency_key', 'status', 'failure_reason', 'is_automated',
     'sent_at', 'delivered_at', 'read_at', 'metadata',
 ])]

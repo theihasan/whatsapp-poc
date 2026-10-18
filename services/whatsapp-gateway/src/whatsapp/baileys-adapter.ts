@@ -17,6 +17,7 @@ import type {
     ConnectionHandlers,
     ContactIdentity,
     OutgoingContent,
+    Person,
     WhatsAppAdapter,
     WhatsAppConnection,
 } from './adapter.ts';
@@ -227,6 +228,17 @@ export class BaileysAdapter implements WhatsAppAdapter {
             })();
         });
 
+        socket.ev.on('groups.update', (updates) => {
+            for (const update of updates) {
+                if (update.id && update.subject) {
+                    this.#groupSubjects.set(update.id, {
+                        subject: update.subject,
+                        expiresAt: Date.now() + 60 * 60 * 1000,
+                    });
+                }
+            }
+        });
+
         socket.ev.on('lid-mapping.update', ({ lid, pn }) => {
             const identity = toIdentity(lid, pn);
 
@@ -302,6 +314,43 @@ export class BaileysAdapter implements WhatsAppAdapter {
         };
     }
 
+    readonly #groupSubjects = new Map<
+        string,
+        { subject: string | null; expiresAt: number }
+    >();
+
+    /**
+     * Group name, cached for an hour (one metadata query per group, not per message).
+     */
+    async #groupSubject(
+        socket: ReturnType<typeof makeWASocket>,
+        groupJid: string,
+    ): Promise<string | null> {
+        const cached = this.#groupSubjects.get(groupJid);
+
+        if (cached !== undefined && cached.expiresAt > Date.now()) {
+            return cached.subject;
+        }
+
+        let subject: string | null = null;
+
+        try {
+            subject = (await socket.groupMetadata(groupJid)).subject || null;
+        } catch (error) {
+            this.logger.warn(
+                { err: error, groupJid },
+                'group metadata unavailable',
+            );
+        }
+
+        this.#groupSubjects.set(groupJid, {
+            subject,
+            expiresAt: Date.now() + 60 * 60 * 1000,
+        });
+
+        return subject;
+    }
+
     async #dispatchIncoming(
         socket: ReturnType<typeof makeWASocket>,
         message: WAMessage,
@@ -313,16 +362,36 @@ export class BaileysAdapter implements WhatsAppAdapter {
             return;
         }
 
-        if (
-            normalized.from.phoneNumber === null &&
-            normalized.from.lid !== null
-        ) {
-            normalized = withResolvedPhone(
-                normalized,
-                await socket.signalRepository.lidMapping.getPNForLID(
-                    normalized.from.lid,
-                ),
-            );
+        const resolve = async (person: Person): Promise<Person> =>
+            person.phoneNumber === null && person.lid !== null
+                ? withResolvedPhone(
+                      person,
+                      await socket.signalRepository.lidMapping.getPNForLID(
+                          person.lid,
+                      ),
+                  )
+                : person;
+
+        if (normalized.chatType === 'group') {
+            normalized = {
+                ...normalized,
+                from: {
+                    ...normalized.from,
+                    pushName: await this.#groupSubject(
+                        socket,
+                        normalized.from.jid,
+                    ),
+                },
+                participant:
+                    normalized.participant === null
+                        ? null
+                        : await resolve(normalized.participant),
+            };
+        } else {
+            normalized = {
+                ...normalized,
+                from: await resolve(normalized.from),
+            };
         }
 
         const { mediaInfo, ...rest } = normalized;

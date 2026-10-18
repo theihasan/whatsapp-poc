@@ -68,7 +68,9 @@ class ProcessIncomingMessage
                     return null;
                 }
 
-                $contact = $this->resolveContact($jid, $payload);
+                $isGroup = Arr::get($payload, 'chatType') === 'group';
+                $contact = $isGroup ? $this->resolveGroup($jid, $payload) : $this->resolveContact($jid, $payload);
+                $sender = $isGroup ? self::groupSender($payload) : null;
 
                 if ($account->provider === MessagingProviderName::UnofficialWeb && $contact->avatarIsStale()) {
                     FetchContactAvatar::dispatch($contact, $account)->afterCommit();
@@ -82,6 +84,8 @@ class ProcessIncomingMessage
                 $message = $conversation->messages()->create([
                     'whatsapp_account_id' => $account->id,
                     'contact_id' => $contact->id,
+                    'sender_jid' => $sender['jid'] ?? null,
+                    'sender_name' => $sender['name'] ?? null,
                     'direction' => MessageDirection::Incoming,
                     'type' => $type,
                     'body' => $body,
@@ -89,6 +93,7 @@ class ProcessIncomingMessage
                     'status' => MessageStatus::Received,
                     'metadata' => array_filter([
                         'timestamp' => Arr::get($payload, 'timestamp'),
+                        'sender_phone' => $sender['phone'] ?? null,
                         'unsupported_type' => $type === MessageType::Unsupported ? Arr::get($payload, 'type') : null,
                     ]),
                 ]);
@@ -96,14 +101,14 @@ class ProcessIncomingMessage
                 $conversation->fill([
                     'status' => ConversationStatus::Open,
                     'last_message_at' => $message->created_at,
-                    'last_message_preview' => self::preview($type, $body),
+                    'last_message_preview' => ($sender === null ? '' : $sender['name'].': ').self::preview($type, $body),
                 ]);
                 $conversation->unread_count++;
                 $conversation->save();
 
                 $contact->forceFill(['last_activity_at' => now()])->save();
 
-                if ($type === MessageType::Text && in_array(mb_strtolower(trim((string) $body)), self::OPT_OUT_KEYWORDS, true)) {
+                if (! $isGroup && $type === MessageType::Text && in_array(mb_strtolower(trim((string) $body)), self::OPT_OUT_KEYWORDS, true)) {
                     $this->revokeConsent->handle($contact, null, 'opt-out keyword received');
                 }
 
@@ -141,6 +146,52 @@ class ProcessIncomingMessage
         $text = Str::limit(trim((string) $body), 120);
 
         return $label === null ? $text : trim($label.' '.$text);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    /**
+     * Group chats are stored as an `is_group` contact named after the group subject.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveGroup(string $jid, array $payload): Contact
+    {
+        $subject = Arr::get($payload, 'from.pushName');
+        $subject = is_string($subject) && $subject !== '' ? mb_substr($subject, 0, 255) : null;
+
+        $group = Contact::query()->firstOrCreate(['wa_jid' => $jid], [
+            'name' => $subject,
+            'is_group' => true,
+            'source' => ContactSource::IncomingMessage,
+        ]);
+
+        if ($subject !== null && $group->name !== $subject) {
+            $group->update(['name' => $subject]);
+        }
+
+        return $group;
+    }
+
+    /**
+     * Who wrote a group message. Group members are not turned into contacts.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array{jid: string|null, name: string, phone: string|null}
+     */
+    private static function groupSender(array $payload): array
+    {
+        $jid = Arr::get($payload, 'participant.jid');
+        $phone = Arr::get($payload, 'participant.phoneNumber');
+        $name = Arr::get($payload, 'participant.pushName');
+        $phone = is_string($phone) && $phone !== '' ? $phone : null;
+
+        return [
+            'jid' => is_string($jid) ? $jid : null,
+            'name' => mb_substr(is_string($name) && $name !== '' ? $name : ($phone ?? 'Group member'), 0, 255),
+            'phone' => $phone,
+        ];
     }
 
     /**

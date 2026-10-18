@@ -48,6 +48,7 @@ class MockDeviceSimulationController extends Controller
             'body' => ['required', 'string', 'max:4096'],
             'phone_number' => ['nullable', 'string', 'regex:/^\+[1-9]\d{6,14}$/'],
             'name' => ['nullable', 'string', 'max:100'],
+            'group_name' => ['nullable', 'string', 'max:100'],
         ]);
 
         if ($device->status !== DeviceStatus::Connected) {
@@ -61,6 +62,7 @@ class MockDeviceSimulationController extends Controller
             $validated['phone_number'] ?? FakePhone::number(),
             $validated['name'] ?? null,
             $validated['body'],
+            $validated['group_name'] ?? null,
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Simulated message received.')]);

@@ -22,6 +22,8 @@ const FILTERS: { value: InboxFilters['filter']; label: string }[] = [
     { value: 'open', label: 'Open' },
     { value: 'closed', label: 'Closed' },
     { value: 'mine', label: 'Mine' },
+    { value: 'direct', label: 'Direct' },
+    { value: 'groups', label: 'Groups' },
 ];
 
 function query(filters: InboxFilters): Record<string, string> {

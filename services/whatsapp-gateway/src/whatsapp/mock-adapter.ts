@@ -145,16 +145,32 @@ export class MockAdapter implements WhatsAppAdapter {
         this.connections.get(sessionId)?.handlers.onIdentity(identity);
     }
 
-    /** Simulates an incoming text message. */
-    receive(sessionId: string, fromPhone: string, text: string): void {
+    /** Simulates an incoming text message, optionally inside a group. */
+    receive(
+        sessionId: string,
+        fromPhone: string,
+        text: string,
+        group?: { jid: string; subject: string },
+    ): void {
+        const sender = {
+            jid: `${fromPhone.replace('+', '')}@s.whatsapp.net`,
+            lid: null,
+            phoneNumber: fromPhone,
+            pushName: 'Mock contact',
+        };
+
         this.connections.get(sessionId)?.handlers.onMessage({
             externalId: `MOCKGWIN${randomBytes(8).toString('hex').toUpperCase()}`,
-            from: {
-                jid: `${fromPhone.replace('+', '')}@s.whatsapp.net`,
-                lid: null,
-                phoneNumber: fromPhone,
-                pushName: 'Mock contact',
-            },
+            from: group
+                ? {
+                      jid: group.jid,
+                      lid: null,
+                      phoneNumber: null,
+                      pushName: group.subject,
+                  }
+                : sender,
+            chatType: group ? 'group' : 'direct',
+            participant: group ? sender : null,
             type: 'text',
             body: text,
             rawType: 'conversation',

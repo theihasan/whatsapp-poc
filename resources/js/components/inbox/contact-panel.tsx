@@ -44,27 +44,37 @@ export default function ContactPanel({
                 <ContactAvatar
                     name={contact.display_name}
                     avatarUrl={contact.avatar_url}
+                    isGroup={contact.is_group}
                     className="mb-2 size-16"
                 />
                 <h2 className="text-base font-semibold">
                     {contact.display_name}
                 </h2>
-                {contact.phone_number && (
-                    <p className="text-muted-foreground">
-                        {contact.phone_number}
-                    </p>
-                )}
-                {!contact.phone_number && (
+                {contact.is_group ? (
                     <p className="text-xs text-muted-foreground">
-                        Phone number not shared by WhatsApp
+                        WhatsApp group. Members are shown on each message and
+                        are not saved as contacts. Automations do not run in
+                        groups.
                     </p>
+                ) : (
+                    <>
+                        {contact.phone_number ? (
+                            <p className="text-muted-foreground">
+                                {contact.phone_number}
+                            </p>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">
+                                Phone number not shared by WhatsApp
+                            </p>
+                        )}
+                        <Link
+                            href={ContactController.show.url(contact.id)}
+                            className="text-xs underline underline-offset-4"
+                        >
+                            Open contact
+                        </Link>
+                    </>
                 )}
-                <Link
-                    href={ContactController.show.url(contact.id)}
-                    className="text-xs underline underline-offset-4"
-                >
-                    Open contact
-                </Link>
             </section>
 
             <section className="space-y-3">
@@ -116,41 +126,47 @@ export default function ContactPanel({
                 </div>
             </section>
 
-            <section className="space-y-2">
-                <h3 className="font-medium">Tags</h3>
-                {contact.tags && contact.tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                        {contact.tags.map((tag) => (
-                            <Badge key={tag.id} variant="secondary">
-                                {tag.name}
-                            </Badge>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-muted-foreground">No tags</p>
-                )}
-            </section>
+            {!contact.is_group && (
+                <>
+                    <section className="space-y-2">
+                        <h3 className="font-medium">Tags</h3>
+                        {contact.tags && contact.tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                                {contact.tags.map((tag) => (
+                                    <Badge key={tag.id} variant="secondary">
+                                        {tag.name}
+                                    </Badge>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">No tags</p>
+                        )}
+                    </section>
 
-            <section className="space-y-2">
-                <h3 className="font-medium">Consent</h3>
-                {activeConsents.length > 0 ? (
-                    <ul className="space-y-1">
-                        {activeConsents.map((consent) => (
-                            <li key={consent.id}>
-                                <span className="font-medium capitalize">
-                                    {consent.scope}
-                                </span>
-                                <span className="text-muted-foreground">
-                                    {' '}
-                                    · via {consent.source}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-muted-foreground">No recorded opt-in</p>
-                )}
-            </section>
+                    <section className="space-y-2">
+                        <h3 className="font-medium">Consent</h3>
+                        {activeConsents.length > 0 ? (
+                            <ul className="space-y-1">
+                                {activeConsents.map((consent) => (
+                                    <li key={consent.id}>
+                                        <span className="font-medium capitalize">
+                                            {consent.scope}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            {' '}
+                                            · via {consent.source}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-muted-foreground">
+                                No recorded opt-in
+                            </p>
+                        )}
+                    </section>
+                </>
+            )}
 
             <form
                 className="space-y-2"

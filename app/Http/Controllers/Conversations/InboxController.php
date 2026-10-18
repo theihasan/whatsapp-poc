@@ -30,7 +30,7 @@ class InboxController extends Controller
         /** @var array{account?: string|null, filter?: string|null, search?: string|null} $filters */
         $filters = $request->validate([
             'account' => ['nullable', 'string', 'max:26'],
-            'filter' => ['nullable', 'in:all,unread,open,closed,mine'],
+            'filter' => ['nullable', 'in:all,unread,open,closed,mine,direct,groups'],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
 

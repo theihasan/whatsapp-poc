@@ -85,7 +85,7 @@ Logs the device out on WhatsApp when connected, then deletes credentials, Signal
 | `504 send_timeout`                                          | **May or may not have been sent**  | `unknown`; never auto-resent            |
 | `5xx` other                                                 | Unknown                            | `unknown`                               |
 
-`to` must be a user JID (`…@s.whatsapp.net` or `…@lid`). Groups/broadcasts are rejected.
+`to` must be a user JID (`…@s.whatsapp.net`, `…@lid`) or a group JID (`…@g.us`). Broadcast lists, status and channels are rejected.
 
 ### `GET /v1/sessions/:id/contacts/:jid/avatar` → `200` image bytes · `404 no_avatar` · `409 session_not_connected`
 

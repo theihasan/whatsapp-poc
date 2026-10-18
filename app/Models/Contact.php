@@ -17,12 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A WhatsApp counterpart. `wa_jid` is the preferred protocol identifier (phone-number JID
  * when known, otherwise the LID); `wa_lid` keeps the privacy LID so either form matches.
- * `phone_number` is only set when WhatsApp actually revealed it.
+ * `phone_number` is only set when WhatsApp actually revealed it. Group chats are stored as
+ * contacts with `is_group` (wa_jid `…@g.us`, name = group subject); they never get consent.
  *
  * @property string $id
  * @property string|null $name
  * @property string|null $wa_jid
  * @property string|null $wa_lid
+ * @property bool $is_group
  * @property string|null $phone_number
  * @property ContactSource $source
  * @property string|null $notes
@@ -32,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['name', 'wa_jid', 'wa_lid', 'phone_number', 'source', 'notes', 'avatar_path', 'avatar_checked_at', 'last_activity_at'])]
+#[Fillable(['name', 'wa_jid', 'wa_lid', 'is_group', 'phone_number', 'source', 'notes', 'avatar_path', 'avatar_checked_at', 'last_activity_at'])]
 class Contact extends Model
 {
     /** @use HasFactory<ContactFactory> */
@@ -45,6 +47,7 @@ class Contact extends Model
     {
         return [
             'source' => ContactSource::class,
+            'is_group' => 'boolean',
             'last_activity_at' => 'datetime',
             'avatar_checked_at' => 'datetime',
         ];
@@ -83,12 +86,23 @@ class Contact extends Model
 
     public function displayName(): string
     {
-        return $this->name ?? $this->phone_number ?? $this->wa_jid ?? 'Unknown contact';
+        return $this->name ?? $this->phone_number ?? ($this->is_group ? 'Unnamed group' : $this->wa_jid) ?? 'Unknown contact';
     }
 
     public function hasActiveConsent(string $scope): bool
     {
         return $this->consents()->active()->where('scope', $scope)->exists();
+    }
+
+    /**
+     * Individual people (excludes group chats).
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function people(Builder $query): void
+    {
+        $query->where('is_group', false);
     }
 
     /**

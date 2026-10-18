@@ -289,3 +289,53 @@ test('publishes contact identities learned from WhatsApp and resolves known LIDs
         [identity],
     );
 });
+
+test('publishes group messages with the group as chat and the sender as participant', async () => {
+    await gateway.sessions.start('session-a');
+    await waitFor(
+        () => gateway.sessions.view('session-a').status === 'qr_ready',
+    );
+    await adapter.scan('session-a');
+
+    adapter.receive('session-a', '+15550100106', 'Hi team', {
+        jid: '120363000000000001@g.us',
+        subject: 'Support crew',
+    });
+
+    const received = (await flush()).find(
+        (event) => event.type === 'message.received',
+    );
+    assert.equal(received?.payload.chatType, 'group');
+    assert.deepEqual(received?.payload.from, {
+        jid: '120363000000000001@g.us',
+        lid: null,
+        phoneNumber: null,
+        pushName: 'Support crew',
+    });
+    assert.equal(
+        (received?.payload.participant as { phoneNumber: string }).phoneNumber,
+        '+15550100106',
+    );
+});
+
+test('sends to a group JID', async () => {
+    await gateway.sessions.start('session-a');
+    await waitFor(
+        () => gateway.sessions.view('session-a').status === 'qr_ready',
+    );
+    await adapter.scan('session-a');
+
+    const response = await gateway.server.inject({
+        method: 'POST',
+        url: '/v1/sessions/session-a/messages',
+        headers: { authorization: `Bearer ${testConfig('.').apiToken}` },
+        payload: {
+            idempotencyKey: 'key-group-001',
+            to: '120363000000000001@g.us',
+            type: 'text',
+            text: 'hello group',
+        },
+    });
+
+    assert.equal(response.statusCode, 200);
+});

@@ -637,6 +637,8 @@ export class SessionManager {
         this.events.publish('message.received', sessionId, {
             externalId: message.externalId,
             from: message.from,
+            chatType: message.chatType,
+            participant: message.participant,
             type: message.type,
             body: message.body,
             rawType: message.type === 'unsupported' ? message.rawType : null,

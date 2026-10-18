@@ -29,6 +29,7 @@ export type Message = {
     failure_reason: string | null;
     is_automated: boolean;
     media_error: string | null;
+    group_sender: { name: string; phone_number: string | null } | null;
     sender_name?: string | null;
     sent_at: string | null;
     delivered_at: string | null;
@@ -68,6 +69,7 @@ export type ContactDetails = {
     id: string;
     name: string | null;
     display_name: string;
+    is_group: boolean;
     phone_number: string | null;
     wa_jid: string | null;
     source: 'manual' | 'incoming_message';
@@ -97,7 +99,7 @@ export type ActiveConversation = {
 
 export type InboxFilters = {
     account: string | null;
-    filter: 'all' | 'unread' | 'open' | 'closed' | 'mine';
+    filter: 'all' | 'unread' | 'open' | 'closed' | 'mine' | 'direct' | 'groups';
     search: string;
 };
 

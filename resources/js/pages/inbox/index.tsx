@@ -80,14 +80,17 @@ function ActiveThread({
                     <ContactAvatar
                         name={active.contact.display_name}
                         avatarUrl={active.contact.avatar_url}
+                        isGroup={active.contact.is_group}
                     />
                     <div className="min-w-0 flex-1">
                         <h1 className="truncate font-semibold">
                             {active.contact.display_name}
                         </h1>
                         <p className="truncate text-xs text-muted-foreground">
-                            {active.contact.phone_number ??
-                                active.contact.wa_jid}{' '}
+                            {active.contact.is_group
+                                ? 'Group'
+                                : (active.contact.phone_number ??
+                                  active.contact.wa_jid)}{' '}
                             · via {active.device.name}
                         </p>
                     </div>

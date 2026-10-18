@@ -10,7 +10,7 @@ import {
     normalizeMessageContent,
     type WAMessage,
 } from '@whiskeysockets/baileys';
-import type { IncomingMessage } from './adapter.ts';
+import type { IncomingMessage, Person } from './adapter.ts';
 
 export type NormalizedWithoutMedia = Omit<IncomingMessage, 'media'> & {
     mediaInfo: {
@@ -37,9 +37,36 @@ export function phoneNumberFromJid(
 }
 
 /**
+ * A user identity from a primary JID and its alternate (PN ↔ LID) form.
+ */
+function person(
+    jid: string,
+    altJid: string | null | undefined,
+    pushName: string | null | undefined,
+): Person {
+    const pnJid = isPnUser(jid)
+        ? jid
+        : isPnUser(altJid ?? undefined)
+          ? altJid
+          : undefined;
+    const lid = isLidUser(jid)
+        ? jid
+        : isLidUser(altJid ?? undefined)
+          ? altJid
+          : undefined;
+
+    return {
+        jid: jidNormalizedUser(pnJid ?? jid),
+        lid: lid ? jidNormalizedUser(lid) : null,
+        phoneNumber: phoneNumberFromJid(pnJid),
+        pushName: pushName ?? null,
+    };
+}
+
+/**
  * Translates a Baileys message into the gateway's normalized shape, or null for traffic
- * the workspace does not handle (own messages, groups, broadcasts, status, newsletters,
- * protocol stubs).
+ * the workspace does not handle (own messages, broadcasts, status, newsletters, protocol
+ * stubs). Group chats are kept: `from` is the group, `participant` the sender.
  */
 export function normalizeIncoming(
     message: WAMessage,
@@ -51,7 +78,6 @@ export function normalizeIncoming(
         key.fromMe ||
         !key.id ||
         !remoteJid ||
-        isJidGroup(remoteJid) ||
         isJidBroadcast(remoteJid) ||
         isJidStatusBroadcast(remoteJid) ||
         isJidNewsletter(remoteJid)
@@ -71,26 +97,24 @@ export function normalizeIncoming(
         return null;
     }
 
-    const pnJid = isPnUser(remoteJid)
-        ? remoteJid
-        : isPnUser(key.remoteJidAlt)
-          ? key.remoteJidAlt
-          : undefined;
-    const lid = isLidUser(remoteJid)
-        ? remoteJid
-        : isLidUser(key.remoteJidAlt)
-          ? key.remoteJidAlt
-          : undefined;
-    const identityJid = jidNormalizedUser(pnJid ?? remoteJid);
+    const isGroup = isJidGroup(remoteJid) === true;
+    const sender = isGroup
+        ? key.participant
+            ? person(key.participant, key.participantAlt, message.pushName)
+            : null
+        : person(remoteJid, key.remoteJidAlt, message.pushName);
+
+    if (sender === null) {
+        return null;
+    }
 
     const base = {
         externalId: key.id,
-        from: {
-            jid: identityJid,
-            lid: lid ? jidNormalizedUser(lid) : null,
-            phoneNumber: phoneNumberFromJid(pnJid),
-            pushName: message.pushName ?? null,
-        },
+        from: isGroup
+            ? { jid: remoteJid, lid: null, phoneNumber: null, pushName: null }
+            : sender,
+        chatType: isGroup ? ('group' as const) : ('direct' as const),
+        participant: isGroup ? sender : null,
         rawType: contentType,
         timestamp: new Date(
             Number(message.messageTimestamp ?? Date.now() / 1000) * 1000,
@@ -165,27 +189,19 @@ export function normalizeIncoming(
 }
 
 /**
- * Completes a LID-only sender with a phone-number JID when one is known.
+ * Completes a LID-only person with their phone-number JID when one is known.
  */
-export function withResolvedPhone<
-    T extends {
-        from: { jid: string; lid: string | null; phoneNumber: string | null };
-    },
->(message: T, pnJid: string | null): T {
+export function withResolvedPhone(
+    person: Person,
+    pnJid: string | null,
+): Person {
     const phoneNumber = phoneNumberFromJid(pnJid);
 
-    if (
-        message.from.phoneNumber !== null ||
-        pnJid === null ||
-        phoneNumber === null
-    ) {
-        return message;
+    if (person.phoneNumber !== null || pnJid === null || phoneNumber === null) {
+        return person;
     }
 
-    return {
-        ...message,
-        from: { ...message.from, jid: jidNormalizedUser(pnJid), phoneNumber },
-    };
+    return { ...person, jid: jidNormalizedUser(pnJid), phoneNumber };
 }
 
 /**

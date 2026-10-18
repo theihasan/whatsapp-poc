@@ -27,7 +27,10 @@ const sessionId = z
     .regex(/^[0-9A-Za-z_-]{8,64}$/, 'invalid session id');
 const recipient = z
     .string()
-    .regex(/^(\d{6,15}@s\.whatsapp\.net|\d{6,20}@lid)$/, 'must be a user JID');
+    .regex(
+        /^(\d{6,15}@s\.whatsapp\.net|\d{6,20}@lid|\d{6,20}(-\d{6,12})?@g\.us)$/,
+        'must be a user or group JID',
+    );
 
 const createSessionBody = z.object({ sessionId });
 

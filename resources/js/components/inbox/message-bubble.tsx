@@ -56,6 +56,15 @@ export default function MessageBubble({ message }: { message: Message }) {
                     ),
                 )}
 
+                {message.group_sender && (
+                    <p
+                        className="mb-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
+                        title={message.group_sender.phone_number ?? undefined}
+                    >
+                        {message.group_sender.name}
+                    </p>
+                )}
+
                 {message.media_error && (
                     <p className="mb-1 text-xs text-muted-foreground italic">
                         {message.media_error}
