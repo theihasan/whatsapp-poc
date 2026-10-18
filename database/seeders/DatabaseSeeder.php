@@ -16,6 +16,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Models\WhatsAppAccount;
 use App\Support\FakePhone;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -102,10 +103,10 @@ class DatabaseSeeder extends Seeder
             'max_runs_per_conversation_per_hour' => 1,
         ]);
 
-        $this->command?->info("Demo login: {$owner->email} / password (mock provider only)");
+        $this->command->info("Demo login: {$owner->email} / password (mock provider only)");
     }
 
-    private function seedMessage(Conversation $conversation, string $body, bool $outgoing, \DateTimeInterface $at): void
+    private function seedMessage(Conversation $conversation, string $body, bool $outgoing, CarbonImmutable $at): void
     {
         $message = $conversation->messages()->make([
             'whatsapp_account_id' => $conversation->whatsapp_account_id,

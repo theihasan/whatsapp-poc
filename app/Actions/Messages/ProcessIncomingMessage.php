@@ -2,6 +2,7 @@
 
 namespace App\Actions\Messages;
 
+use App\Actions\Contacts\RevokeConsent;
 use App\Enums\ContactSource;
 use App\Enums\ConversationStatus;
 use App\Enums\MessageDirection;
@@ -9,6 +10,7 @@ use App\Enums\MessageStatus;
 use App\Enums\MessageType;
 use App\Events\ConversationUpdated;
 use App\Events\MessageCreated;
+use App\Jobs\DownloadIncomingAttachment;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -25,6 +27,13 @@ use Illuminate\Support\Str;
 class ProcessIncomingMessage
 {
     /**
+     * Messages that withdraw every active consent (compared case-insensitively).
+     */
+    public const OPT_OUT_KEYWORDS = ['stop', 'unsubscribe', 'stop all', 'opt out', 'optout'];
+
+    public function __construct(private RevokeConsent $revokeConsent) {}
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     public function handle(WhatsAppAccount $account, array $payload): ?Message
@@ -39,9 +48,10 @@ class ProcessIncomingMessage
         $type = MessageType::tryFrom((string) Arr::get($payload, 'type')) ?? MessageType::Unsupported;
         $body = Arr::get($payload, 'body') ?? Arr::get($payload, 'caption');
         $body = is_string($body) ? mb_substr($body, 0, 65535) : null;
+        $media = Arr::get($payload, 'media');
 
         try {
-            return DB::transaction(function () use ($account, $payload, $externalId, $jid, $type, $body): ?Message {
+            return DB::transaction(function () use ($account, $payload, $externalId, $jid, $type, $body, $media): ?Message {
                 if (Message::query()->where('whatsapp_account_id', $account->id)->where('external_id', $externalId)->exists()) {
                     return null;
                 }
@@ -76,6 +86,16 @@ class ProcessIncomingMessage
                 $conversation->save();
 
                 $contact->forceFill(['last_activity_at' => now()])->save();
+
+                if ($type === MessageType::Text && in_array(mb_strtolower(trim((string) $body)), self::OPT_OUT_KEYWORDS, true)) {
+                    $this->revokeConsent->handle($contact, null, 'opt-out keyword received');
+                }
+
+                if (is_array($media) && is_string($media['mediaId'] ?? null)) {
+                    DownloadIncomingAttachment::dispatch($message, $media['mediaId'])->afterCommit();
+                } elseif (is_array($media) && isset($media['error'])) {
+                    $message->update(['metadata' => [...($message->metadata ?? []), 'media_error' => 'The attachment could not be downloaded from WhatsApp.']]);
+                }
 
                 MessageCreated::dispatch($message);
                 ConversationUpdated::dispatch($conversation);

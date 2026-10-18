@@ -26,6 +26,7 @@ class MessageResource extends JsonResource
             'status' => $this->status->value,
             'failure_reason' => $this->failure_reason,
             'is_automated' => $this->is_automated,
+            'media_error' => $this->metadata['media_error'] ?? null,
             'sender_name' => $this->whenLoaded('sender', fn () => $this->sender?->name),
             'sent_at' => $this->sent_at?->toIso8601String(),
             'delivered_at' => $this->delivered_at?->toIso8601String(),

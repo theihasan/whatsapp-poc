@@ -62,3 +62,9 @@ Live testing showed ~3 s UI latency: each broadcast was a second queued job and 
 ## D-015 — Node built-in test runner for the gateway
 
 `npm install vitest` crashes on npm 10.9 (`Cannot read properties of null (reading 'edgesOut')` while resolving optional peers). The gateway uses `node --test` with native TypeScript type stripping instead — no test dependency, same assertions.
+
+## D-016 — E.164 phone validation without a phone library
+`giggsey/libphonenumber-for-php` would be a new dependency, which needs owner approval (AGENTS.md). Manual contacts therefore require international format (`+` and 7–15 digits); spaces, dashes, dots, parentheses and a `00` prefix are normalized. Numbers are not validated per-country. Contacts created from WhatsApp traffic take the number from the protocol (or none for LID-only senders).
+
+## D-017 — Opt-out keywords
+An incoming text that is exactly `STOP`, `UNSUBSCRIBE`, `STOP ALL`, `OPT OUT` or `OPTOUT` (case/whitespace-insensitive) revokes every active consent for that contact and is audit-logged. Messages that merely contain "stop" do not.

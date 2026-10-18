@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Contacts\ContactConsentController;
+use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Conversations\ConversationController;
 use App\Http\Controllers\Conversations\ConversationMessageController;
 use App\Http\Controllers\Conversations\InboxController;
@@ -29,6 +31,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('conversations/{conversation}/messages', [ConversationMessageController::class, 'index'])->name('conversations.messages.index');
     Route::post('conversations/{conversation}/messages', [ConversationMessageController::class, 'store'])->middleware('throttle:send-message')->name('conversations.messages.store');
     Route::post('messages/{message}/retry', [ConversationMessageController::class, 'retry'])->name('messages.retry');
+
+    Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
+    Route::post('contacts/{contact}/consents', [ContactConsentController::class, 'store'])->name('contacts.consents.store');
+    Route::delete('contacts/{contact}/consents/{consent}', [ContactConsentController::class, 'destroy'])->scopeBindings()->name('contacts.consents.destroy');
 
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::post('devices/{device}/simulate/incoming-message', [MockDeviceSimulationController::class, 'incomingMessage'])->name('devices.simulate.incoming');

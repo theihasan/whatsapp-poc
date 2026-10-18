@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 6 — Contacts and inbox improvements
-> **Next step:** Contacts CRUD pages, tags, notes, consent grant/revoke, incoming media download.
+> **Current phase:** 7 — Templates and automation
+> **Next step:** template CRUD + rendering, rules engine with RunAutomations job.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -54,9 +54,11 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - Found & fixed live: ~3 s latency (queued broadcast + 3 s worker sleep) → `ShouldBroadcastNow` + `ShouldRescue` after commit (D-014) and Horizon `sleep => 1`.
 - ⛔ Not verified in a real browser (no browser automation available in this environment): React re-render on events, `useEcho` cleanup, offline banner. See `docs/testing.md` manual checklist.
 
-## Phase 6 — Contacts and inbox improvements ⬜
+## Phase 6 — Contacts and inbox improvements ✅
 
 - Contact CRUD, tags, notes, search, consent records (grant / revoke), assignment, filters (All / Unread / Open / Closed / Mine), attachments (image, document) with private storage + authorized download, mark read.
+- Added: STOP opt-out (D-017), E.164 normalization + duplicate detection (D-016), incoming media download from the gateway with MIME allow-list, inline notes in the inbox.
+- Out of scope by owner decision: CSV import. Audio is accepted inbound and stored; there is no audio recorder for outbound.
 
 ## Phase 7 — Templates and automation ⬜
 

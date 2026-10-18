@@ -28,6 +28,7 @@ export type Message = {
     status: MessageStatus;
     failure_reason: string | null;
     is_automated: boolean;
+    media_error: string | null;
     sender_name?: string | null;
     sent_at: string | null;
     delivered_at: string | null;

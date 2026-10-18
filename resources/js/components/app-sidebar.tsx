@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { Inbox, LayoutGrid, Smartphone } from 'lucide-react';
+import { Inbox, LayoutGrid, Smartphone, Users } from 'lucide-react';
+import ContactController from '@/actions/App/Http/Controllers/Contacts/ContactController';
 import DeviceController from '@/actions/App/Http/Controllers/Devices/DeviceController';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -26,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'Inbox',
         href: inbox(),
         icon: Inbox,
+    },
+    {
+        title: 'Contacts',
+        href: ContactController.index(),
+        icon: Users,
     },
     {
         title: 'Devices',

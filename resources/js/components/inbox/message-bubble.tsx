@@ -56,6 +56,12 @@ export default function MessageBubble({ message }: { message: Message }) {
                     ),
                 )}
 
+                {message.media_error && (
+                    <p className="mb-1 text-xs text-muted-foreground italic">
+                        {message.media_error}
+                    </p>
+                )}
+
                 {message.type === 'unsupported' ? (
                     <p className="text-muted-foreground italic">
                         This message type isn't supported yet.

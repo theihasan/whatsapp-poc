@@ -1,7 +1,10 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
+import ContactController from '@/actions/App/Http/Controllers/Contacts/ContactController';
 import ConversationController from '@/actions/App/Http/Controllers/Conversations/ConversationController';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
     SelectContent,
@@ -15,13 +18,15 @@ import type { ActiveConversation, Agent } from '@/types';
 export default function ContactPanel({
     active,
     agents,
-    contactUrl,
 }: {
     active: ActiveConversation;
     agents: Agent[];
-    contactUrl?: string;
 }) {
     const { contact, conversation } = active;
+    const notes = useForm({
+        name: contact.name ?? contact.display_name,
+        notes: contact.notes ?? '',
+    });
     const update = (changes: Record<string, string | number | null>) =>
         router.patch(
             ConversationController.update.url(conversation.id),
@@ -48,14 +53,12 @@ export default function ContactPanel({
                         Phone number not shared by WhatsApp
                     </p>
                 )}
-                {contactUrl && (
-                    <Link
-                        href={contactUrl}
-                        className="text-xs underline underline-offset-4"
-                    >
-                        Open contact
-                    </Link>
-                )}
+                <Link
+                    href={ContactController.show.url(contact.id)}
+                    className="text-xs underline underline-offset-4"
+                >
+                    Open contact
+                </Link>
             </section>
 
             <section className="space-y-3">
@@ -143,12 +146,39 @@ export default function ContactPanel({
                 )}
             </section>
 
-            <section className="space-y-2">
-                <h3 className="font-medium">Notes</h3>
-                <p className="whitespace-pre-wrap text-muted-foreground">
-                    {contact.notes || 'No notes yet.'}
-                </p>
-            </section>
+            <form
+                className="space-y-2"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    notes.patch(ContactController.update.url(contact.id), {
+                        preserveScroll: true,
+                        preserveState: true,
+                    });
+                }}
+            >
+                <Label htmlFor="contact-notes-inline" className="font-medium">
+                    Notes
+                </Label>
+                <Textarea
+                    id="contact-notes-inline"
+                    value={notes.data.notes}
+                    onChange={(event) =>
+                        notes.setData('notes', event.target.value)
+                    }
+                    placeholder="Add a private note"
+                    rows={3}
+                    maxLength={5000}
+                />
+                {notes.isDirty && (
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={notes.processing}
+                    >
+                        Save note
+                    </Button>
+                )}
+            </form>
 
             <section className="space-y-1 text-xs text-muted-foreground">
                 <p>Device: {active.device.name}</p>
