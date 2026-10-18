@@ -34,13 +34,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $delivered_at
  * @property CarbonImmutable|null $read_at
  * @property array<string, mixed>|null $metadata
+ * @property list<array{reactor: string, name: string, emoji: string, at: string}>|null $reactions
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'conversation_id', 'whatsapp_account_id', 'contact_id', 'user_id', 'sender_jid', 'sender_name', 'direction', 'type', 'body',
     'external_id', 'idempotency_key', 'status', 'failure_reason', 'is_automated',
-    'sent_at', 'delivered_at', 'read_at', 'metadata',
+    'sent_at', 'delivered_at', 'read_at', 'metadata', 'reactions',
 ])]
 class Message extends Model
 {
@@ -61,6 +62,7 @@ class Message extends Model
             'delivered_at' => 'datetime',
             'read_at' => 'datetime',
             'metadata' => 'array',
+            'reactions' => 'array',
         ];
     }
 

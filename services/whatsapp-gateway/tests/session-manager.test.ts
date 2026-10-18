@@ -339,3 +339,19 @@ test('sends to a group JID', async () => {
 
     assert.equal(response.statusCode, 200);
 });
+
+test('publishes reactions as message.reaction events', async () => {
+    await gateway.sessions.start('session-a');
+    await waitFor(
+        () => gateway.sessions.view('session-a').status === 'qr_ready',
+    );
+    await adapter.scan('session-a');
+
+    adapter.react('session-a', '+15550100108', 'TARGET3', '👍');
+
+    const reaction = (await flush()).find(
+        (event) => event.type === 'message.reaction',
+    );
+    assert.equal(reaction?.payload.targetExternalId, 'TARGET3');
+    assert.equal(reaction?.payload.emoji, '👍');
+});

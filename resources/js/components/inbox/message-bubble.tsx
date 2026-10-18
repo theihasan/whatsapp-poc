@@ -13,11 +13,28 @@ export default function MessageBubble({ message }: { message: Message }) {
         outgoing &&
         (message.status === 'failed' || message.status === 'unknown');
 
+    const reactionGroups = Object.values(
+        message.reactions.reduce<
+            Record<string, { emoji: string; names: string[] }>
+        >((groups, reaction) => {
+            groups[reaction.emoji] ??= { emoji: reaction.emoji, names: [] };
+            groups[reaction.emoji].names.push(reaction.name);
+
+            return groups;
+        }, {}),
+    );
+
     return (
-        <div className={cn('flex', outgoing ? 'justify-end' : 'justify-start')}>
+        <div
+            className={cn(
+                'flex flex-col',
+                outgoing ? 'items-end' : 'items-start',
+                reactionGroups.length > 0 && 'pb-3',
+            )}
+        >
             <div
                 className={cn(
-                    'max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-xs sm:max-w-[65%]',
+                    'relative max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-xs sm:max-w-[65%]',
                     outgoing
                         ? 'rounded-br-md bg-emerald-50 text-emerald-950 dark:bg-emerald-950/60 dark:text-emerald-50'
                         : 'rounded-bl-md bg-muted',
@@ -127,6 +144,30 @@ export default function MessageBubble({ message }: { message: Message }) {
                             {message.failure_reason}
                         </p>
                     )}
+                {reactionGroups.length > 0 && (
+                    <ul
+                        aria-label="Reactions"
+                        className={cn(
+                            'absolute -bottom-4 flex gap-0.5 rounded-full border bg-background px-1.5 py-0.5 text-xs shadow-xs',
+                            outgoing ? 'right-2' : 'left-2',
+                        )}
+                    >
+                        {reactionGroups.map((group) => (
+                            <li
+                                key={group.emoji}
+                                title={group.names.join(', ')}
+                                className="flex items-center gap-0.5"
+                            >
+                                <span>{group.emoji}</span>
+                                {group.names.length > 1 && (
+                                    <span className="text-muted-foreground tabular-nums">
+                                        {group.names.length}
+                                    </span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         </div>
     );

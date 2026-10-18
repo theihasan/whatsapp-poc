@@ -28,6 +28,10 @@ class MessageResource extends JsonResource
             'is_automated' => $this->is_automated,
             'media_error' => $this->metadata['media_error'] ?? null,
             'sender_name' => $this->whenLoaded('sender', fn () => $this->sender?->name),
+            'reactions' => array_map(
+                fn (array $reaction): array => ['emoji' => $reaction['emoji'], 'name' => $reaction['name']],
+                $this->reactions ?? [],
+            ),
             'group_sender' => $this->sender_name === null ? null : [
                 'name' => $this->sender_name,
                 'phone_number' => $this->metadata['sender_phone'] ?? null,

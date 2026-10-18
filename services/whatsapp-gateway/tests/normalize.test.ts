@@ -5,6 +5,7 @@ import { classifyClose } from '../src/whatsapp/baileys-adapter.ts';
 import {
     deliveryStatusFromProto,
     normalizeIncoming,
+    normalizeReaction,
     phoneNumberFromJid,
     withResolvedPhone,
 } from '../src/whatsapp/normalize.ts';
@@ -230,4 +231,54 @@ test('drops group messages without a known participant', () => {
         ),
         null,
     );
+});
+
+test('turns a reaction into a reaction event instead of a message', () => {
+    const reaction = message({
+        message: {
+            reactionMessage: {
+                key: {
+                    id: 'TARGET1',
+                    remoteJid: '15550100101@s.whatsapp.net',
+                    fromMe: true,
+                },
+                text: '💙',
+            },
+        },
+    });
+
+    assert.equal(normalizeIncoming(reaction), null);
+    assert.deepEqual(normalizeReaction(reaction), {
+        externalId: 'ABC',
+        targetExternalId: 'TARGET1',
+        emoji: '💙',
+        from: {
+            jid: '15550100101@s.whatsapp.net',
+            lid: null,
+            phoneNumber: '+15550100101',
+            pushName: 'Alex',
+        },
+        chatType: 'direct',
+        participant: null,
+        timestamp: '2027-01-15T08:00:00.000Z',
+    });
+});
+
+test('reports removed reactions as an empty emoji and keeps group reactors', () => {
+    const removed = normalizeReaction(
+        message({
+            key: {
+                id: 'R2',
+                remoteJid: '120363000000000000@g.us',
+                participant: '15550100107@s.whatsapp.net',
+                fromMe: false,
+            },
+            message: { reactionMessage: { key: { id: 'TARGET2' }, text: '' } },
+        }),
+    );
+
+    assert.equal(removed?.emoji, '');
+    assert.equal(removed?.chatType, 'group');
+    assert.equal(removed?.participant?.phoneNumber, '+15550100107');
+    assert.equal(normalizeReaction(message({})), null);
 });

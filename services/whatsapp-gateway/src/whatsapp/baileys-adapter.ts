@@ -24,6 +24,7 @@ import type {
 import {
     deliveryStatusFromProto,
     normalizeIncoming,
+    normalizeReaction,
     phoneNumberFromJid,
     withResolvedPhone,
 } from './normalize.ts';
@@ -356,12 +357,6 @@ export class BaileysAdapter implements WhatsAppAdapter {
         message: WAMessage,
         handlers: ConnectionHandlers,
     ): Promise<void> {
-        let normalized = normalizeIncoming(message);
-
-        if (normalized === null) {
-            return;
-        }
-
         const resolve = async (person: Person): Promise<Person> =>
             person.phoneNumber === null && person.lid !== null
                 ? withResolvedPhone(
@@ -371,6 +366,30 @@ export class BaileysAdapter implements WhatsAppAdapter {
                       ),
                   )
                 : person;
+
+        const reaction = normalizeReaction(message);
+
+        if (reaction !== null) {
+            handlers.onReaction(
+                reaction.chatType === 'group'
+                    ? {
+                          ...reaction,
+                          participant:
+                              reaction.participant === null
+                                  ? null
+                                  : await resolve(reaction.participant),
+                      }
+                    : { ...reaction, from: await resolve(reaction.from) },
+            );
+
+            return;
+        }
+
+        let normalized = normalizeIncoming(message);
+
+        if (normalized === null) {
+            return;
+        }
 
         if (normalized.chatType === 'group') {
             normalized = {

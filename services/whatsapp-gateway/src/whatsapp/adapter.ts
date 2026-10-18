@@ -32,6 +32,17 @@ export type IncomingMessage = {
     media: IncomingMedia | null;
 };
 
+export type IncomingReaction = {
+    externalId: string;
+    targetExternalId: string;
+    /** Empty string when the reaction was removed. */
+    emoji: string;
+    from: Person;
+    chatType: 'direct' | 'group';
+    participant: Person | null;
+    timestamp: string;
+};
+
 export type DeliveryStatus = 'sent' | 'delivered' | 'read' | 'failed';
 
 export type CloseReason =
@@ -58,6 +69,7 @@ export type ConnectionHandlers = {
     onMessage: (message: IncomingMessage) => void;
     onStatus: (messageId: string, status: DeliveryStatus) => void;
     onIdentity: (identity: ContactIdentity) => void;
+    onReaction: (reaction: IncomingReaction) => void;
 };
 
 export type OutgoingContent =

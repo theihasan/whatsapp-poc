@@ -30,6 +30,7 @@ export type Message = {
     is_automated: boolean;
     media_error: string | null;
     group_sender: { name: string; phone_number: string | null } | null;
+    reactions: { emoji: string; name: string }[];
     sender_name?: string | null;
     sent_at: string | null;
     delivered_at: string | null;

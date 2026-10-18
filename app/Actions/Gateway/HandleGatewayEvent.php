@@ -4,6 +4,7 @@ namespace App\Actions\Gateway;
 
 use App\Actions\Contacts\LinkContactIdentity;
 use App\Actions\Devices\ApplyDeviceStatus;
+use App\Actions\Messages\ApplyMessageReaction;
 use App\Actions\Messages\MarkOutgoingMessageFailed;
 use App\Actions\Messages\ProcessIncomingMessage;
 use App\Actions\Messages\UpdateMessageDeliveryStatus;
@@ -26,6 +27,7 @@ class HandleGatewayEvent
         private UpdateMessageDeliveryStatus $updateMessageDeliveryStatus,
         private MarkOutgoingMessageFailed $markOutgoingMessageFailed,
         private LinkContactIdentity $linkContactIdentity,
+        private ApplyMessageReaction $applyMessageReaction,
     ) {}
 
     public function handle(GatewayEvent $event): bool
@@ -55,6 +57,7 @@ class HandleGatewayEvent
             'message.status.updated' => $this->updateMessageDeliveryStatus->handle($account, $payload),
             'message.failed' => $this->markOutgoingMessageFailed->handle($account, $payload),
             'contact.identified' => $this->identify($payload),
+            'message.reaction' => $this->applyMessageReaction->handle($account, $payload),
             default => false,
         };
     }

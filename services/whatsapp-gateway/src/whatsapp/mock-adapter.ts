@@ -145,6 +145,29 @@ export class MockAdapter implements WhatsAppAdapter {
         this.connections.get(sessionId)?.handlers.onIdentity(identity);
     }
 
+    /** Simulates a direct-chat reaction (empty emoji = removed). */
+    react(
+        sessionId: string,
+        fromPhone: string,
+        targetExternalId: string,
+        emoji: string,
+    ): void {
+        this.connections.get(sessionId)?.handlers.onReaction({
+            externalId: `MOCKGWRX${randomBytes(8).toString('hex').toUpperCase()}`,
+            targetExternalId,
+            emoji,
+            from: {
+                jid: `${fromPhone.replace('+', '')}@s.whatsapp.net`,
+                lid: null,
+                phoneNumber: fromPhone,
+                pushName: 'Mock contact',
+            },
+            chatType: 'direct',
+            participant: null,
+            timestamp: new Date().toISOString(),
+        });
+    }
+
     /** Simulates an incoming text message, optionally inside a group. */
     receive(
         sessionId: string,

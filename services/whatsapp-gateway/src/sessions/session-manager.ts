@@ -473,6 +473,15 @@ export class SessionManager {
                             void this.#publishIncoming(session.id, message);
                         }
                     },
+                    onReaction: (reaction) => {
+                        if (current()) {
+                            this.events.publish(
+                                'message.reaction',
+                                session.id,
+                                { ...reaction },
+                            );
+                        }
+                    },
                     onIdentity: (identity) => {
                         if (current()) {
                             this.events.publish(

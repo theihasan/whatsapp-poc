@@ -98,3 +98,7 @@ WhatsApp Web clients can request a contact's profile picture; the gateway expose
 ## D-024 — Group chats
 
 Groups are supported for reading and replying. A group is stored as a contact with `is_group = true` (`wa_jid` = `…@g.us`, name = subject), so conversations, the inbox, assignment, avatars and sending reuse the 1:1 model. Each incoming group message records its sender (`messages.sender_jid`, `sender_name`, `metadata.sender_phone`). Safety defaults: group members are **not** turned into contacts, groups never get consent records or STOP handling, automations (including auto-replies) never run in groups, and groups are excluded from the Contacts page. Inbox filters: Direct / Groups. Not supported: member lists, admin actions, mentions, group creation, messages you send from the phone itself.
+
+## D-025 — Reactions are not messages
+
+WhatsApp delivers a reaction as a `reactionMessage` referencing the target message id. The gateway emits `message.reaction` instead of `message.received`; Laravel keeps at most one reaction per person on the target message (`messages.reactions` JSON: reactor JID, name, emoji, time), replaces it on change and removes it on an empty emoji. Reactions to messages the workspace never stored are ignored. Sending reactions from the inbox is not implemented yet. Edits and deletions (`protocolMessage`) are still ignored.

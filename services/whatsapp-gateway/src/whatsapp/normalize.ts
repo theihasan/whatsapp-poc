@@ -68,9 +68,17 @@ function person(
  * the workspace does not handle (own messages, broadcasts, status, newsletters, protocol
  * stubs). Group chats are kept: `from` is the group, `participant` the sender.
  */
-export function normalizeIncoming(
-    message: WAMessage,
-): NormalizedWithoutMedia | null {
+type ChatContext = {
+    id: string;
+    from: Person;
+    chatType: 'direct' | 'group';
+    participant: Person | null;
+};
+
+/**
+ * Shared filtering and identity extraction for anything a contact sends.
+ */
+function chatContext(message: WAMessage): ChatContext | null {
     const key = message.key;
     const remoteJid = key.remoteJid ?? undefined;
 
@@ -81,18 +89,6 @@ export function normalizeIncoming(
         isJidBroadcast(remoteJid) ||
         isJidStatusBroadcast(remoteJid) ||
         isJidNewsletter(remoteJid)
-    ) {
-        return null;
-    }
-
-    const content = normalizeMessageContent(message.message);
-    const contentType = getContentType(content);
-
-    if (
-        !content ||
-        !contentType ||
-        contentType === 'protocolMessage' ||
-        contentType === 'senderKeyDistributionMessage'
     ) {
         return null;
     }
@@ -108,13 +104,80 @@ export function normalizeIncoming(
         return null;
     }
 
-    const base = {
-        externalId: key.id,
+    return {
+        id: key.id,
         from: isGroup
             ? { jid: remoteJid, lid: null, phoneNumber: null, pushName: null }
             : sender,
-        chatType: isGroup ? ('group' as const) : ('direct' as const),
+        chatType: isGroup ? 'group' : 'direct',
         participant: isGroup ? sender : null,
+    };
+}
+
+export type NormalizedReaction = {
+    externalId: string;
+    targetExternalId: string;
+    /** Empty string when the reaction was removed. */
+    emoji: string;
+    from: Person;
+    chatType: 'direct' | 'group';
+    participant: Person | null;
+    timestamp: string;
+};
+
+/**
+ * A reaction to an earlier message, or null when the message is not a reaction.
+ */
+export function normalizeReaction(
+    message: WAMessage,
+): NormalizedReaction | null {
+    const reaction = normalizeMessageContent(message.message)?.reactionMessage;
+    const context = reaction ? chatContext(message) : null;
+
+    if (!reaction?.key?.id || context === null) {
+        return null;
+    }
+
+    return {
+        externalId: context.id,
+        targetExternalId: reaction.key.id,
+        emoji: reaction.text ?? '',
+        from: context.from,
+        chatType: context.chatType,
+        participant: context.participant,
+        timestamp: new Date(
+            Number(message.messageTimestamp ?? Date.now() / 1000) * 1000,
+        ).toISOString(),
+    };
+}
+
+export function normalizeIncoming(
+    message: WAMessage,
+): NormalizedWithoutMedia | null {
+    const context = chatContext(message);
+
+    if (context === null) {
+        return null;
+    }
+
+    const content = normalizeMessageContent(message.message);
+    const contentType = getContentType(content);
+
+    if (
+        !content ||
+        !contentType ||
+        contentType === 'protocolMessage' ||
+        contentType === 'senderKeyDistributionMessage' ||
+        contentType === 'reactionMessage'
+    ) {
+        return null;
+    }
+
+    const base = {
+        externalId: context.id,
+        from: context.from,
+        chatType: context.chatType,
+        participant: context.participant,
         rawType: contentType,
         timestamp: new Date(
             Number(message.messageTimestamp ?? Date.now() / 1000) * 1000,
