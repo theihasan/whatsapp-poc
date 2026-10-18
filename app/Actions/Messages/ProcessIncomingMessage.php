@@ -1,0 +1,126 @@
+<?php
+
+namespace App\Actions\Messages;
+
+use App\Enums\ContactSource;
+use App\Enums\ConversationStatus;
+use App\Enums\MessageDirection;
+use App\Enums\MessageStatus;
+use App\Enums\MessageType;
+use App\Events\ConversationUpdated;
+use App\Events\MessageCreated;
+use App\Models\Contact;
+use App\Models\Conversation;
+use App\Models\Message;
+use App\Models\WhatsAppAccount;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+/**
+ * Turns a normalized `message.received` payload into contact / conversation / message rows.
+ * Idempotent on (whatsapp_account_id, external_id): returns null for duplicates.
+ */
+class ProcessIncomingMessage
+{
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function handle(WhatsAppAccount $account, array $payload): ?Message
+    {
+        $externalId = Arr::get($payload, 'externalId');
+        $jid = Arr::get($payload, 'from.jid');
+
+        if (! is_string($externalId) || $externalId === '' || ! is_string($jid) || $jid === '') {
+            throw new \InvalidArgumentException('message.received requires externalId and from.jid.');
+        }
+
+        $type = MessageType::tryFrom((string) Arr::get($payload, 'type')) ?? MessageType::Unsupported;
+        $body = Arr::get($payload, 'body') ?? Arr::get($payload, 'caption');
+        $body = is_string($body) ? mb_substr($body, 0, 65535) : null;
+
+        try {
+            return DB::transaction(function () use ($account, $payload, $externalId, $jid, $type, $body): ?Message {
+                if (Message::query()->where('whatsapp_account_id', $account->id)->where('external_id', $externalId)->exists()) {
+                    return null;
+                }
+
+                $contact = $this->resolveContact($jid, $payload);
+
+                $conversation = Conversation::query()->firstOrCreate(
+                    ['whatsapp_account_id' => $account->id, 'contact_id' => $contact->id],
+                    ['status' => ConversationStatus::Open],
+                );
+
+                $message = $conversation->messages()->create([
+                    'whatsapp_account_id' => $account->id,
+                    'contact_id' => $contact->id,
+                    'direction' => MessageDirection::Incoming,
+                    'type' => $type,
+                    'body' => $body,
+                    'external_id' => $externalId,
+                    'status' => MessageStatus::Received,
+                    'metadata' => array_filter([
+                        'timestamp' => Arr::get($payload, 'timestamp'),
+                        'unsupported_type' => $type === MessageType::Unsupported ? Arr::get($payload, 'type') : null,
+                    ]),
+                ]);
+
+                $conversation->fill([
+                    'status' => ConversationStatus::Open,
+                    'last_message_at' => $message->created_at,
+                    'last_message_preview' => self::preview($type, $body),
+                ]);
+                $conversation->unread_count++;
+                $conversation->save();
+
+                $contact->forceFill(['last_activity_at' => now()])->save();
+
+                MessageCreated::dispatch($message);
+                ConversationUpdated::dispatch($conversation);
+
+                return $message;
+            });
+        } catch (UniqueConstraintViolationException) {
+            return null;
+        }
+    }
+
+    public static function preview(MessageType $type, ?string $body): string
+    {
+        $label = match ($type) {
+            MessageType::Image => '📷 Photo',
+            MessageType::Document => '📄 Document',
+            MessageType::Audio => '🎤 Audio',
+            MessageType::Unsupported => 'Unsupported message',
+            MessageType::Text => null,
+        };
+
+        $text = Str::limit(trim((string) $body), 120);
+
+        return $label === null ? $text : trim($label.' '.$text);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveContact(string $jid, array $payload): Contact
+    {
+        $phoneNumber = Arr::get($payload, 'from.phoneNumber');
+        $pushName = Arr::get($payload, 'from.pushName');
+
+        $contact = Contact::query()->firstOrCreate(['wa_jid' => $jid], [
+            'name' => is_string($pushName) && $pushName !== '' ? mb_substr($pushName, 0, 255) : null,
+            'phone_number' => is_string($phoneNumber) ? $phoneNumber : null,
+            'source' => ContactSource::IncomingMessage,
+        ]);
+
+        if ($contact->phone_number === null && is_string($phoneNumber)) {
+            $contact->phone_number = $phoneNumber;
+            $contact->save();
+        }
+
+        return $contact;
+    }
+}

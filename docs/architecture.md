@@ -22,13 +22,13 @@ Laravel 13 ── MySQL (business data, source of truth)      │
 
 ## Responsibilities
 
-| Laravel owns | Gateway owns |
-|---|---|
-| Users, auth, settings, audit log | WhatsApp Web protocol (Baileys) |
+| Laravel owns                                                   | Gateway owns                                           |
+| -------------------------------------------------------------- | ------------------------------------------------------ |
+| Users, auth, settings, audit log                               | WhatsApp Web protocol (Baileys)                        |
 | Accounts (devices), contacts, consent, conversations, messages | QR generation, connection lifecycle, reconnect/backoff |
-| Message state machine, idempotency, deduplication | Encrypted auth-state store (creds + Signal keys) |
-| Automations, templates, dashboard | Translating protocol events into normalized events |
-| Broadcasting to the browser | Durable webhook outbox with retries |
+| Message state machine, idempotency, deduplication              | Encrypted auth-state store (creds + Signal keys)       |
+| Automations, templates, dashboard                              | Translating protocol events into normalized events     |
+| Broadcasting to the browser                                    | Durable webhook outbox with retries                    |
 
 The gateway holds no business data beyond what it needs to deliver events: session ids, auth state, and a pending-webhook outbox.
 
@@ -37,9 +37,9 @@ The gateway holds no business data beyond what it needs to deliver events: sessi
 1. `POST /conversations/{conversation}/messages` → `QueueOutgoingMessage` action writes a `messages` row (`queued`, new `idempotency_key`) inside a transaction and dispatches `SendOutgoingMessage` after commit.
 2. Job sets `processing`, calls `provider->sendMessage()` with the idempotency key.
 3. Provider result:
-   - accepted → `gateway_accepted` + `external_id`
-   - permanent rejection → `failed` + reason
-   - timeout / connection error after the request may have been sent → `unknown` (no automatic resend; user can retry explicitly, which reuses the idempotency key so the gateway can deduplicate).
+    - accepted → `gateway_accepted` + `external_id`
+    - permanent rejection → `failed` + reason
+    - timeout / connection error after the request may have been sent → `unknown` (no automatic resend; user can retry explicitly, which reuses the idempotency key so the gateway can deduplicate).
 4. Later `message.status.updated` events advance `sent → delivered → read`. Status only moves forward (out-of-order events are ignored).
 
 ## Inbound flow
@@ -66,11 +66,11 @@ Valid transitions are encoded in `App\Enums\DeviceStatus::canTransitionTo()` and
 
 ## Real-time channels
 
-| Channel | Events | Payload policy |
-|---|---|---|
-| `private-devices` | `DeviceStatusChanged` | account id, status, phone/display name, last error |
-| `private-conversations` | `ConversationUpdated` | list-row fields: preview (truncated), unread, assignee, status |
-| `private-conversations.{id}` | `MessageCreated`, `MessageStatusUpdated` | message resource fields only |
+| Channel                      | Events                                   | Payload policy                                                 |
+| ---------------------------- | ---------------------------------------- | -------------------------------------------------------------- |
+| `private-devices`            | `DeviceStatusChanged`                    | account id, status, phone/display name, last error             |
+| `private-conversations`      | `ConversationUpdated`                    | list-row fields: preview (truncated), unread, assignee, status |
+| `private-conversations.{id}` | `MessageCreated`, `MessageStatusUpdated` | message resource fields only                                   |
 
 No gateway payload is rebroadcast.
 
