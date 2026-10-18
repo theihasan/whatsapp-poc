@@ -2,6 +2,7 @@ import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/react';
 import ContactController from '@/actions/App/Http/Controllers/Contacts/ContactController';
 import ConversationController from '@/actions/App/Http/Controllers/Conversations/ConversationController';
 import ConsentSection from '@/components/contacts/consent-section';
+import ContactAvatar from '@/components/contacts/contact-avatar';
 import ContactFormFields from '@/components/contacts/contact-form-fields';
 import type { ContactFormData } from '@/components/contacts/contact-form-fields';
 import Heading from '@/components/heading';
@@ -60,14 +61,21 @@ export default function ContactShow({
             <div className="mx-auto grid w-full max-w-5xl gap-10 p-4 md:p-6 lg:grid-cols-[1fr_18rem]">
                 <div className="space-y-10">
                     <div className="flex flex-wrap items-start justify-between gap-4">
-                        <Heading
-                            title={contact.display_name}
-                            description={
-                                contact.source === 'manual'
-                                    ? 'Added manually'
-                                    : 'Created from an incoming message'
-                            }
-                        />
+                        <div className="flex items-center gap-4">
+                            <ContactAvatar
+                                name={contact.display_name}
+                                avatarUrl={contact.avatar_url}
+                                className="size-14"
+                            />
+                            <Heading
+                                title={contact.display_name}
+                                description={
+                                    contact.source === 'manual'
+                                        ? 'Added manually'
+                                        : 'Created from an incoming message'
+                                }
+                            />
+                        </div>
                         {devices.length > 0 && contact.wa_jid && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

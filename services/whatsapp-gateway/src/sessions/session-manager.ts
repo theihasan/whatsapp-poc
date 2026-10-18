@@ -274,6 +274,19 @@ export class SessionManager {
         }
     }
 
+    async profilePicture(
+        sessionId: string,
+        jid: string,
+    ): Promise<{ data: Buffer; mimeType: string } | null> {
+        const session = this.#require(sessionId);
+
+        if (session.status !== 'connected' || session.connection === null) {
+            throw sessionNotConnected();
+        }
+
+        return session.connection.profilePicture(jid);
+    }
+
     /**
      * Phone-number identities for LIDs, from the session's local mapping store only.
      */

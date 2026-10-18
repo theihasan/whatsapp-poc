@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ContactController from '@/actions/App/Http/Controllers/Contacts/ContactController';
+import ContactAvatar from '@/components/contacts/contact-avatar';
 import ContactFormFields from '@/components/contacts/contact-form-fields';
 import type { ContactFormData } from '@/components/contacts/contact-form-fields';
 import Heading from '@/components/heading';
@@ -230,14 +231,23 @@ export default function ContactsIndex({
                                         className="hover:bg-accent/40"
                                     >
                                         <td className="px-4 py-3">
-                                            <Link
-                                                href={ContactController.show.url(
-                                                    contact.id,
-                                                )}
-                                                className="font-medium hover:underline"
-                                            >
-                                                {contact.display_name}
-                                            </Link>
+                                            <div className="flex items-center gap-3">
+                                                <ContactAvatar
+                                                    name={contact.display_name}
+                                                    avatarUrl={
+                                                        contact.avatar_url
+                                                    }
+                                                    className="size-8"
+                                                />
+                                                <Link
+                                                    href={ContactController.show.url(
+                                                        contact.id,
+                                                    )}
+                                                    className="font-medium hover:underline"
+                                                >
+                                                    {contact.display_name}
+                                                </Link>
+                                            </div>
                                         </td>
                                         <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
                                             {contact.phone_number ?? '—'}

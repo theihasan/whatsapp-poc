@@ -90,3 +90,7 @@ WhatsApp increasingly addresses users by LID (`…@lid`), a privacy identifier w
 ## D-022 — "Paired" means `creds.me`, not `creds.registered`
 
 Live testing showed Baileys QR pairing leaves `creds.registered = false` (that flag belongs to the pairing-code flow) and sets `creds.me`. Session restore and close classification now use `isPaired()` (`me.id` present or `registered`). The mock adapter mirrors this so tests would catch a regression.
+
+## D-023 — Contact profile pictures
+
+WhatsApp Web clients can request a contact's profile picture; the gateway exposes this (preview size, JPEG/PNG ≤ 1 MB, WhatsApp CDN only). CDN URLs expire and the CSP only allows same-origin images, so Laravel's `FetchContactAvatar` copies the picture to the private disk (`avatars/{contact}.jpg`) and serves it through the authenticated `contacts.avatar` route. Checked at most once per 7 days per contact (also when the picture is hidden), triggered by incoming WhatsApp Web messages, and `app:refresh-contact-avatars --limit=50` backfills only contacts you already have a conversation with — no lookups of arbitrary numbers. Pictures hidden by privacy settings are not available and show initials.

@@ -27,6 +27,44 @@ import {
     withResolvedPhone,
 } from './normalize.ts';
 
+export const MAX_PROFILE_PICTURE_BYTES = 1024 * 1024;
+
+/**
+ * Downloads a WhatsApp CDN avatar, accepting only small JPEG/PNG images.
+ */
+export async function downloadProfilePicture(
+    url: string,
+    fetchImpl: typeof fetch = fetch,
+): Promise<{ data: Buffer; mimeType: string } | null> {
+    if (!/^https:\/\/[a-z0-9.-]+\.whatsapp\.net\//i.test(url)) {
+        return null;
+    }
+
+    const response = await fetchImpl(url, {
+        signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) {
+        return null;
+    }
+
+    const data = Buffer.from(await response.arrayBuffer());
+    const isJpeg = data[0] === 0xff && data[1] === 0xd8;
+    const isPng = data
+        .subarray(0, 4)
+        .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    if (
+        data.length === 0 ||
+        data.length > MAX_PROFILE_PICTURE_BYTES ||
+        (!isJpeg && !isPng)
+    ) {
+        return null;
+    }
+
+    return { data, mimeType: isPng ? 'image/png' : 'image/jpeg' };
+}
+
 function toIdentity(lid: string, pn: string): ContactIdentity | null {
     const phoneNumber = phoneNumberFromJid(pn);
 
@@ -227,6 +265,29 @@ export class BaileysAdapter implements WhatsAppAdapter {
             logout: async () => {
                 closed = true;
                 await socket.logout();
+            },
+            profilePicture: async (jid: string) => {
+                let url: string | undefined;
+
+                try {
+                    url = await socket.profilePictureUrl(
+                        jid,
+                        'preview',
+                        10_000,
+                    );
+                } catch (error) {
+                    const status = (
+                        error as { output?: { statusCode?: number } }
+                    ).output?.statusCode;
+
+                    if (status === 401 || status === 403 || status === 404) {
+                        return null;
+                    }
+
+                    throw error;
+                }
+
+                return url === undefined ? null : downloadProfilePicture(url);
             },
             resolveLids: async (lids: string[]) => {
                 const pairs =

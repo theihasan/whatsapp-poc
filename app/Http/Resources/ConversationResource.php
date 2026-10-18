@@ -27,6 +27,7 @@ class ConversationResource extends JsonResource
                 'id' => $this->contact->id,
                 'name' => $this->contact->displayName(),
                 'phone_number' => $this->contact->phone_number,
+                'avatar_url' => ContactResource::avatarUrl($this->contact),
             ],
             'assignee' => $this->assignee === null ? null : [
                 'id' => $this->assignee->id,

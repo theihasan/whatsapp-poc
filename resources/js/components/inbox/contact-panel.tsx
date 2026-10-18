@@ -1,6 +1,7 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import ContactController from '@/actions/App/Http/Controllers/Contacts/ContactController';
 import ConversationController from '@/actions/App/Http/Controllers/Conversations/ConversationController';
+import ContactAvatar from '@/components/contacts/contact-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,11 @@ export default function ContactPanel({
     return (
         <aside className="hidden w-72 shrink-0 flex-col gap-6 overflow-y-auto border-l p-4 text-sm xl:flex">
             <section className="space-y-1">
+                <ContactAvatar
+                    name={contact.display_name}
+                    avatarUrl={contact.avatar_url}
+                    className="mb-2 size-16"
+                />
                 <h2 className="text-base font-semibold">
                     {contact.display_name}
                 </h2>

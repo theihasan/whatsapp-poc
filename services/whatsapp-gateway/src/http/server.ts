@@ -245,6 +245,25 @@ export function buildServer(deps: ServerDependencies) {
         };
     });
 
+    app.get('/v1/sessions/:id/contacts/:jid/avatar', async (request, reply) => {
+        const { id, jid } = parse(
+            z.object({ id: sessionId, jid: recipient }),
+            request.params,
+        );
+        const picture = await deps.sessions.profilePicture(id, jid);
+        reply.header('Cache-Control', 'no-store');
+
+        return picture === null
+            ? reply.code(404).send({
+                  error: {
+                      code: 'no_avatar',
+                      message:
+                          'No profile picture is visible for this contact.',
+                  },
+              })
+            : reply.header('Content-Type', picture.mimeType).send(picture.data);
+    });
+
     app.post('/v1/sessions/:id/contacts/resolve', async (request) => {
         const { id } = parse(z.object({ id: sessionId }), request.params);
         const body = parse(

@@ -26,11 +26,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $phone_number
  * @property ContactSource $source
  * @property string|null $notes
+ * @property string|null $avatar_path
+ * @property CarbonImmutable|null $avatar_checked_at
  * @property CarbonImmutable|null $last_activity_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['name', 'wa_jid', 'wa_lid', 'phone_number', 'source', 'notes', 'last_activity_at'])]
+#[Fillable(['name', 'wa_jid', 'wa_lid', 'phone_number', 'source', 'notes', 'avatar_path', 'avatar_checked_at', 'last_activity_at'])]
 class Contact extends Model
 {
     /** @use HasFactory<ContactFactory> */
@@ -44,6 +46,7 @@ class Contact extends Model
         return [
             'source' => ContactSource::class,
             'last_activity_at' => 'datetime',
+            'avatar_checked_at' => 'datetime',
         ];
     }
 
@@ -69,6 +72,13 @@ class Contact extends Model
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class);
+    }
+
+    public const AVATAR_REFRESH_DAYS = 7;
+
+    public function avatarIsStale(): bool
+    {
+        return $this->avatar_checked_at === null || $this->avatar_checked_at->lt(now()->subDays(self::AVATAR_REFRESH_DAYS));
     }
 
     public function displayName(): string

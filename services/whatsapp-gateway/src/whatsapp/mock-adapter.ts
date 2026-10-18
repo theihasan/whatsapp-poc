@@ -26,6 +26,7 @@ export class MockAdapter implements WhatsAppAdapter {
     >();
     connectCalls = 0;
     readonly lidMappings = new Map<string, ContactIdentity>();
+    readonly avatars = new Map<string, { data: Buffer; mimeType: string }>();
     private readonly autoConnectMs: number;
 
     constructor(autoConnectMs = 0) {
@@ -97,6 +98,8 @@ export class MockAdapter implements WhatsAppAdapter {
             logout: async () => {
                 entry.open = false;
             },
+            profilePicture: async (jid: string) =>
+                this.avatars.get(jid) ?? null,
             resolveLids: async (lids: string[]) =>
                 lids
                     .filter((lid) => this.lidMappings.has(lid))

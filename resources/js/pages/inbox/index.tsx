@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { MessageSquare } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { inbox } from '@/routes';
+import ContactAvatar from '@/components/contacts/contact-avatar';
 import DeviceStatusBadge from '@/components/devices/device-status-badge';
 import Composer from '@/components/inbox/composer';
 import ContactPanel from '@/components/inbox/contact-panel';
@@ -76,7 +77,11 @@ function ActiveThread({
         <>
             <section className="flex min-w-0 flex-1 flex-col">
                 <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
-                    <div className="min-w-0">
+                    <ContactAvatar
+                        name={active.contact.display_name}
+                        avatarUrl={active.contact.avatar_url}
+                    />
+                    <div className="min-w-0 flex-1">
                         <h1 className="truncate font-semibold">
                             {active.contact.display_name}
                         </h1>

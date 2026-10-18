@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Activity\ActivityController;
 use App\Http\Controllers\Automations\AutomationRuleController;
+use App\Http\Controllers\Contacts\ContactAvatarController;
 use App\Http\Controllers\Contacts\ContactConsentController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Conversations\ConversationController;
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('messages/{message}/retry', [ConversationMessageController::class, 'retry'])->name('messages.retry');
 
     Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
+    Route::get('contacts/{contact}/avatar', ContactAvatarController::class)->name('contacts.avatar');
     Route::post('contacts/{contact}/consents', [ContactConsentController::class, 'store'])->name('contacts.consents.store');
     Route::delete('contacts/{contact}/consents/{consent}', [ContactConsentController::class, 'destroy'])->scopeBindings()->name('contacts.consents.destroy');
 

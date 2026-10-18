@@ -9,9 +9,11 @@ use App\Enums\ConversationStatus;
 use App\Enums\MessageDirection;
 use App\Enums\MessageStatus;
 use App\Enums\MessageType;
+use App\Enums\MessagingProviderName;
 use App\Events\ConversationUpdated;
 use App\Events\MessageCreated;
 use App\Jobs\DownloadIncomingAttachment;
+use App\Jobs\FetchContactAvatar;
 use App\Jobs\RunAutomations;
 use App\Models\Contact;
 use App\Models\Conversation;
@@ -67,6 +69,10 @@ class ProcessIncomingMessage
                 }
 
                 $contact = $this->resolveContact($jid, $payload);
+
+                if ($account->provider === MessagingProviderName::UnofficialWeb && $contact->avatarIsStale()) {
+                    FetchContactAvatar::dispatch($contact, $account)->afterCommit();
+                }
 
                 $conversation = Conversation::query()->firstOrCreate(
                     ['whatsapp_account_id' => $account->id, 'contact_id' => $contact->id],

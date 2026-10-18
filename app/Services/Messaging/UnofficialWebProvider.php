@@ -90,6 +90,33 @@ class UnofficialWebProvider implements MessagingProvider
     }
 
     /**
+     * The contact's WhatsApp profile picture as raw bytes, or null when none is visible
+     * to this account (no picture, or hidden by the contact's privacy settings).
+     *
+     * @return array{data: string, mime_type: string}|null
+     *
+     * @throws ProviderUnavailableException
+     */
+    public function profilePicture(WhatsAppAccount $account, string $jid): ?array
+    {
+        try {
+            $response = $this->gateway->request()->accept('*/*')->get("/v1/sessions/{$account->sessionId()}/contacts/{$jid}/avatar");
+        } catch (ConnectionException $exception) {
+            throw new ProviderUnavailableException('The WhatsApp gateway is unreachable.', previous: $exception);
+        }
+
+        if ($response->status() === 404) {
+            return null;
+        }
+
+        if ($response->failed()) {
+            throw new ProviderUnavailableException('The gateway could not fetch the profile picture ('.$response->status().').');
+        }
+
+        return ['data' => $response->body(), 'mime_type' => (string) $response->header('Content-Type')];
+    }
+
+    /**
      * Phone-number identities for LIDs the linked device already knows (gateway-local
      * mapping store; no lookup on WhatsApp).
      *

@@ -13,6 +13,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class ContactResource extends JsonResource
 {
+    public static function avatarUrl(Contact $contact): ?string
+    {
+        return $contact->avatar_path === null
+            ? null
+            : route('contacts.avatar', ['contact' => $contact, 'v' => $contact->avatar_checked_at?->getTimestamp()]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -26,6 +33,7 @@ class ContactResource extends JsonResource
             'wa_jid' => $this->wa_jid,
             'source' => $this->source->value,
             'notes' => $this->notes,
+            'avatar_url' => self::avatarUrl($this->resource),
             'last_activity_at' => $this->last_activity_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->map(fn (Tag $tag): array => ['id' => $tag->id, 'name' => $tag->name])->all()),

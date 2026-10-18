@@ -73,6 +73,13 @@ export type WhatsAppConnection = {
     close: () => Promise<void>;
     /** Unlink the device on WhatsApp's side. */
     logout: () => Promise<void>;
+    /**
+     * The contact's profile picture (preview size), or null when they have none or their
+     * privacy settings hide it from this account.
+     */
+    profilePicture: (
+        jid: string,
+    ) => Promise<{ data: Buffer; mimeType: string } | null>;
     /** Phone-number identities for LIDs already known locally (no network lookup). */
     resolveLids: (lids: string[]) => Promise<ContactIdentity[]>;
 };

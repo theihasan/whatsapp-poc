@@ -225,3 +225,36 @@ test('validates LID resolution requests', async () => {
 
     assert.equal(response.statusCode, 422);
 });
+
+test('serves a contact avatar and returns 404 when none is visible', async () => {
+    await gateway.server.inject({
+        method: 'POST',
+        url: '/v1/sessions',
+        headers: auth,
+        payload: { sessionId: '01JSESSIONAAAA' },
+    });
+    await waitFor(
+        () => gateway.sessions.view('01JSESSIONAAAA').status === 'qr_ready',
+    );
+    await adapter.scan('01JSESSIONAAAA');
+    adapter.avatars.set('15550100101@s.whatsapp.net', {
+        data: Buffer.from([0xff, 0xd8, 0x01]),
+        mimeType: 'image/jpeg',
+    });
+
+    const found = await gateway.server.inject({
+        method: 'GET',
+        url: '/v1/sessions/01JSESSIONAAAA/contacts/15550100101@s.whatsapp.net/avatar',
+        headers: auth,
+    });
+    const missing = await gateway.server.inject({
+        method: 'GET',
+        url: '/v1/sessions/01JSESSIONAAAA/contacts/15550100102@s.whatsapp.net/avatar',
+        headers: auth,
+    });
+
+    assert.equal(found.statusCode, 200);
+    assert.equal(found.headers['content-type'], 'image/jpeg');
+    assert.equal(missing.statusCode, 404);
+    assert.equal(missing.json().error.code, 'no_avatar');
+});

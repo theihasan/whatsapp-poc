@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { inbox } from '@/routes';
 import { show as showConversation } from '@/routes/inbox';
+import ContactAvatar from '@/components/contacts/contact-avatar';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -166,6 +167,12 @@ export default function ConversationList({
                                             'bg-accent',
                                     )}
                                 >
+                                    <ContactAvatar
+                                        name={conversation.contact.name}
+                                        avatarUrl={
+                                            conversation.contact.avatar_url
+                                        }
+                                    />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-baseline justify-between gap-2">
                                             <span

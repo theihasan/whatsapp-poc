@@ -44,7 +44,12 @@ export type ConversationSummary = {
     unread_count: number;
     last_message_at: string | null;
     last_message_preview: string | null;
-    contact: { id: string; name: string; phone_number: string | null };
+    contact: {
+        id: string;
+        name: string;
+        phone_number: string | null;
+        avatar_url: string | null;
+    };
     assignee: { id: number; name: string } | null;
 };
 
@@ -67,6 +72,7 @@ export type ContactDetails = {
     wa_jid: string | null;
     source: 'manual' | 'incoming_message';
     notes: string | null;
+    avatar_url: string | null;
     last_activity_at: string | null;
     created_at: string | null;
     tags?: ContactTag[];
