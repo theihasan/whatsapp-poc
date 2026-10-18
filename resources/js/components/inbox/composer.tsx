@@ -44,10 +44,12 @@ const ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt';
 export default function Composer({
     conversationId,
     disabledReason,
+    suggestion,
     toolbar,
 }: {
     conversationId: string;
     disabledReason: string | null;
+    suggestion?: string | null;
     toolbar?: (insert: (text: string) => void) => ReactNode;
 }) {
     const textarea = useRef<HTMLTextAreaElement>(null);
@@ -110,6 +112,24 @@ export default function Composer({
 
     return (
         <div className="border-t p-3">
+            {suggestion && form.data.body === '' && (
+                <div className="mb-2 flex items-start gap-2 rounded-lg border border-dashed px-3 py-2 text-sm">
+                    <p className="min-w-0 flex-1">
+                        <span className="text-xs font-medium text-muted-foreground">
+                            Suggested reply ·{' '}
+                        </span>
+                        {suggestion}
+                    </p>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7"
+                        onClick={() => insert(suggestion)}
+                    >
+                        Use
+                    </Button>
+                </div>
+            )}
             {disabledReason && (
                 <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
                     {disabledReason}

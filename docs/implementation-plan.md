@@ -6,8 +6,8 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 
 ## Checkpoint
 
-> **Current phase:** 7 — Templates and automation
-> **Next step:** template CRUD + rendering, rules engine with RunAutomations job.
+> **Current phase:** 8 — Dashboard and reporting
+> **Next step:** cached aggregates, activity chart, workload, health, notifications list.
 
 ## Phase 0 — Architecture and setup ✅
 
@@ -60,10 +60,12 @@ Scope changes vs. the master prompt are recorded in `docs/decisions.md` (single 
 - Added: STOP opt-out (D-017), E.164 normalization + duplicate detection (D-016), incoming media download from the gateway with MIME allow-list, inline notes in the inbox.
 - Out of scope by owner decision: CSV import. Audio is accepted inbound and stored; there is no audio recorder for outbound.
 
-## Phase 7 — Templates and automation ⬜
+## Phase 7 — Templates and automation ✅ (campaigns deferred by owner)
 
 - Template CRUD with `{{placeholders}}`, validation, preview, insert into composer.
 - Rules engine: incoming-message trigger; keyword / business-hours / tag conditions; assign / tag / notify / suggest-reply / auto-reply actions; priority, enable, dry-run, rate limit, loop prevention, execution log.
+- Verified: 26 template/automation tests; live run through Horizon (`RunAutomations` on the `automations` queue) produced the seeded rule's suggestion.
+- Known test-environment artefact: with the `sync` queue, delivery receipts for an auto-reply are released by the per-session `WithoutOverlapping` lock of the outer job; with Redis they process right after.
 
 ## Phase 8 — Dashboard and reporting ⬜
 

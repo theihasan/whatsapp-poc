@@ -11,6 +11,7 @@ use App\Enums\MessageType;
 use App\Events\ConversationUpdated;
 use App\Events\MessageCreated;
 use App\Jobs\DownloadIncomingAttachment;
+use App\Jobs\RunAutomations;
 use App\Models\Contact;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -99,6 +100,7 @@ class ProcessIncomingMessage
 
                 MessageCreated::dispatch($message);
                 ConversationUpdated::dispatch($conversation);
+                RunAutomations::dispatch($message)->afterCommit();
 
                 return $message;
             });

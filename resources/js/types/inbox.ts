@@ -82,6 +82,7 @@ export type InboxAccount = {
 
 export type ActiveConversation = {
     conversation: ConversationSummary;
+    suggested_reply: string | null;
     contact: ContactDetails;
     device: InboxAccount;
     messages: Message[];

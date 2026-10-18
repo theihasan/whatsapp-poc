@@ -95,6 +95,14 @@ class Message extends Model
     }
 
     /**
+     * @return HasMany<AutomationExecution, $this>
+     */
+    public function automationExecutions(): HasMany
+    {
+        return $this->hasMany(AutomationExecution::class);
+    }
+
+    /**
      * @return HasMany<MessageAttachment, $this>
      */
     public function attachments(): HasMany

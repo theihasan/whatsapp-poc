@@ -1,5 +1,14 @@
 import { Link } from '@inertiajs/react';
-import { Inbox, LayoutGrid, Smartphone, Users } from 'lucide-react';
+import {
+    FileText,
+    Inbox,
+    LayoutGrid,
+    Smartphone,
+    Users,
+    Workflow,
+} from 'lucide-react';
+import AutomationRuleController from '@/actions/App/Http/Controllers/Automations/AutomationRuleController';
+import TemplateController from '@/actions/App/Http/Controllers/Templates/TemplateController';
 import ContactController from '@/actions/App/Http/Controllers/Contacts/ContactController';
 import DeviceController from '@/actions/App/Http/Controllers/Devices/DeviceController';
 import AppLogo from '@/components/app-logo';
@@ -32,6 +41,16 @@ const mainNavItems: NavItem[] = [
         title: 'Contacts',
         href: ContactController.index(),
         icon: Users,
+    },
+    {
+        title: 'Templates',
+        href: TemplateController.index(),
+        icon: FileText,
+    },
+    {
+        title: 'Automations',
+        href: AutomationRuleController.index(),
+        icon: Workflow,
     },
     {
         title: 'Devices',

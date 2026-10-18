@@ -87,6 +87,7 @@ class InboxController extends Controller
 
         return [
             'conversation' => (new ConversationResource($conversation))->resolve(),
+            'suggested_reply' => $conversation->suggested_reply,
             'contact' => (new ContactResource($contact))->resolve(),
             'device' => [
                 'id' => $conversation->whatsappAccount->id,

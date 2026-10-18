@@ -23,10 +23,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $last_message_at
  * @property string|null $last_message_preview
  * @property int $unread_count
+ * @property string|null $suggested_reply
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['whatsapp_account_id', 'contact_id', 'status', 'assigned_user_id', 'last_message_at', 'last_message_preview', 'unread_count'])]
+#[Fillable(['whatsapp_account_id', 'contact_id', 'status', 'assigned_user_id', 'last_message_at', 'last_message_preview', 'unread_count', 'suggested_reply'])]
 class Conversation extends Model
 {
     /** @use HasFactory<ConversationFactory> */

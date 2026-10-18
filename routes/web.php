@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Automations\AutomationRuleController;
 use App\Http\Controllers\Contacts\ContactConsentController;
 use App\Http\Controllers\Contacts\ContactController;
 use App\Http\Controllers\Conversations\ConversationController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Devices\DeviceController;
 use App\Http\Controllers\Devices\DeviceSessionController;
 use App\Http\Controllers\Devices\MockDeviceSimulationController;
 use App\Http\Controllers\Messages\AttachmentController;
+use App\Http\Controllers\Templates\TemplateController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -35,6 +37,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('contacts', ContactController::class)->except(['create', 'edit']);
     Route::post('contacts/{contact}/consents', [ContactConsentController::class, 'store'])->name('contacts.consents.store');
     Route::delete('contacts/{contact}/consents/{consent}', [ContactConsentController::class, 'destroy'])->scopeBindings()->name('contacts.consents.destroy');
+
+    Route::post('templates/preview', [TemplateController::class, 'preview'])->name('templates.preview');
+    Route::resource('templates', TemplateController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('conversations/{conversation}/templates', [TemplateController::class, 'forConversation'])->name('conversations.templates');
+
+    Route::resource('automations', AutomationRuleController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::patch('automations/{automation}/toggle', [AutomationRuleController::class, 'toggle'])->name('automations.toggle');
 
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::post('devices/{device}/simulate/incoming-message', [MockDeviceSimulationController::class, 'incomingMessage'])->name('devices.simulate.incoming');

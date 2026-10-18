@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { MessageSquare } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { inbox } from '@/routes';
@@ -7,6 +7,7 @@ import Composer from '@/components/inbox/composer';
 import ContactPanel from '@/components/inbox/contact-panel';
 import ConversationList from '@/components/inbox/conversation-list';
 import MessageThread from '@/components/inbox/message-thread';
+import TemplatePicker from '@/components/inbox/template-picker';
 import {
     useConversationListUpdates,
     useConversationMessages,
@@ -57,11 +58,13 @@ function ActiveThread({
         setMessages((current) => mergeMessages(current, active.messages));
     }, [active.messages]);
 
-    const onMessage = useCallback(
-        (message: Message) =>
-            setMessages((current) => mergeMessages(current, [message])),
-        [],
-    );
+    const onMessage = useCallback((message: Message) => {
+        setMessages((current) => mergeMessages(current, [message]));
+
+        if (message.direction === 'incoming') {
+            router.reload({ only: ['active'] });
+        }
+    }, []);
     useConversationMessages(conversationId, onMessage);
 
     const disabledReason =
@@ -97,6 +100,14 @@ function ActiveThread({
                 <Composer
                     conversationId={conversationId}
                     disabledReason={disabledReason}
+                    suggestion={active.suggested_reply}
+                    toolbar={(insert) => (
+                        <TemplatePicker
+                            conversationId={conversationId}
+                            onPick={insert}
+                            disabled={disabledReason !== null}
+                        />
+                    )}
                 />
             </section>
             <ContactPanel active={active} agents={agents} />

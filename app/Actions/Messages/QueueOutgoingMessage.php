@@ -59,6 +59,7 @@ class QueueOutgoingMessage
                 'last_message_at' => $message->created_at,
                 'last_message_preview' => ProcessIncomingMessage::preview($type, $body),
                 'unread_count' => 0,
+                'suggested_reply' => $isAutomated ? $conversation->suggested_reply : null,
             ])->save();
 
             MessageCreated::dispatch($message);

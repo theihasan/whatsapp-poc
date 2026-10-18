@@ -64,7 +64,13 @@ Live testing showed ~3 s UI latency: each broadcast was a second queued job and 
 `npm install vitest` crashes on npm 10.9 (`Cannot read properties of null (reading 'edgesOut')` while resolving optional peers). The gateway uses `node --test` with native TypeScript type stripping instead — no test dependency, same assertions.
 
 ## D-016 — E.164 phone validation without a phone library
+
 `giggsey/libphonenumber-for-php` would be a new dependency, which needs owner approval (AGENTS.md). Manual contacts therefore require international format (`+` and 7–15 digits); spaces, dashes, dots, parentheses and a `00` prefix are normalized. Numbers are not validated per-country. Contacts created from WhatsApp traffic take the number from the protocol (or none for LID-only senders).
 
 ## D-017 — Opt-out keywords
+
 An incoming text that is exactly `STOP`, `UNSUBSCRIBE`, `STOP ALL`, `OPT OUT` or `OPTOUT` (case/whitespace-insensitive) revokes every active consent for that contact and is audit-logged. Messages that merely contain "stop" do not.
+
+## D-018 — Automation safety model
+
+Rules are evaluated only for incoming, non-automated messages (outgoing and automated messages can never trigger rules). Each rule is rate-limited per conversation per hour, and `auto_reply` additionally requires: the workspace toggle `auto_reply_enabled` (default **off**), a provider whose capabilities allow auto-replies, a connected device, and no automated message in the same conversation in the last 60 s. New rules default to dry-run. Notifications contain the rule, contact and conversation id — never message text. Extension point for future AI: add an action type in `AutomationEngine::perform()`.
